@@ -129,6 +129,11 @@ input[type=checkbox]{width:auto;accent-color:var(--brass)}
 .flow em{color:var(--muted);font-style:normal}
 .sens td.hl{background:var(--brass-soft);font-weight:600}
 footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border-top:1px solid var(--line);padding-top:14px}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed var(--line);border-radius:10px;padding:26px 16px;text-align:center;cursor:pointer;background:var(--paper);margin-top:10px}
+.drop b{color:var(--ink);font-size:15px}.drop span{font-size:13px;color:var(--muted)}
+.drop:hover,.drop.over{border-color:var(--brass);background:var(--brass-soft)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+#finTable input{width:92px;text-align:right}
 .menu-btn{display:none}
 @media (max-width:860px){
   .app{grid-template-columns:1fr}
@@ -147,6 +152,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
   <div class="brand"><b>AI Capital Intelligence</b><span>IPO × 投資 × 併購 × 企業估值</span></div>
   <div class="navgroup">總覽</div>
   <a href="#overview" data-v="overview"><span class="n">00</span>平台架構</a>
+  <a href="#data" data-v="data"><span class="n">UP</span>案件資料・上傳</a>
   <a href="#committee" data-v="committee"><span class="n">AI</span>投資決策委員會</a>
   <div class="navgroup">八大功能模組</div>
   <a href="#ipo" data-v="ipo"><span class="n">01</span>IPO 智慧中心</a>
@@ -170,7 +176,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
   <div class="eyebrow">AI CAPITAL INTELLIGENCE</div>
   <h1>每一個投資案，在投入資金前，先經過七大專家大腦審查</h1>
   <p class="lede">建立一個投資案件、上傳公司資料，總控 AI 會把案件分派給法律、會計、投行、創投、產業、專利臨床、策略併購七位專家 Agent，交叉驗證後產出投資決策報告。聚焦 AI、生技醫療與未來明星產業。</p>
-  <div class="row" style="margin-bottom:18px"><a href="#committee"><button type="button">開始一個投資案件</button></a><a href="#valuation"><button type="button" class="ghost">試用估值計算器</button></a></div>
+  <div class="row" style="margin-bottom:18px"><a href="#data"><button type="button">建立案件・上傳資料</button></a><a href="#valuation"><button type="button" class="ghost">試用估值計算器</button></a></div>
 
   <div class="arch">
     <div class="layer orch"><b>AI 專家決策中樞</b><h3>總控 AI Orchestrator</h3><div style="font-size:13px;opacity:.85">案件管理｜資料整合｜Agent 分派｜交叉驗證｜決策報告</div></div>
@@ -215,30 +221,51 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
   </div>
 </section>
 
-<!-- ============ COMMITTEE ============ -->
-<section class="view" id="v-committee">
-  <div class="eyebrow">AI 投資決策委員會</div>
-  <h1>建立投資案件</h1>
-  <p class="lede">填入公司資料或貼上募資計畫書文字，選擇要出席的專家 Agent。每位專家依自己的專業出具意見，最後由總控 Agent 交叉驗證並給出評級。</p>
-  <div class="card">
+<!-- ============ DATA ============ -->
+<section class="view" id="v-data">
+  <div class="eyebrow">案件資料中心</div>
+  <h1>上傳與輸入投資標的資料</h1>
+  <p class="lede">每個投資案件的文件、財務數字與說明都存在這裡。所有 AI 專家、估值計算器與補件清單都讀取目前選取的案件。文件只在你的瀏覽器中解析與保存，只有在你按下 AI 分析時才會送出內容。</p>
+  <div class="card"><div class="row" style="justify-content:space-between">
+    <label for="dealSel" style="flex-direction:row;align-items:center;gap:8px">目前案件<select id="dealSel" style="width:auto;min-width:240px"></select></label>
+    <div class="row"><button type="button" class="ghost" id="dealNew">新增案件</button><button type="button" class="ghost" id="dealDel">刪除此案件</button></div>
+  </div></div>
+  <div class="card" style="margin-top:14px"><h3>基本資料</h3>
     <div class="form">
       <label for="cName">公司／專案名稱<input id="cName" value="示範：明日醫影 AI 股份有限公司"></label>
       <label for="cInd">產業<select id="cInd"><option>AI 醫療</option><option>AI 軟體／Agent</option><option>生技新藥</option><option>細胞治療／再生醫學</option><option>醫療器材／醫療科技</option><option>半導體</option><option>能源與儲能</option><option>長壽科技</option><option>機器人</option><option>國防科技</option><option>其他</option></select></label>
       <label for="cStage">資本市場階段<select id="cStage"><option>未公開發行／新創</option><option>公開發行，準備登錄興櫃</option><option>興櫃，準備上市或上櫃</option><option>上市櫃公司</option><option>非營利組織衍生事業</option></select></label>
       <label for="cRole">我的角色<select id="cRole"><option>投資人：評估是否投資</option><option>企業：準備募資或 IPO</option><option>併購買方</option><option>併購賣方</option></select></label>
     </div>
-    <label for="cDesc" style="margin-top:10px">公司資料／募資計畫書內容（可貼上文字，或上傳 .txt / .md / .csv）
-      <textarea id="cDesc" style="min-height:170px">產品：AI 醫療影像輔助判讀系統（胸部 X 光、肺結節），已取得 TFDA 醫材許可，美國 FDA 510(k) 申請中。
+    <label for="cDesc" style="margin-top:10px">公司資料／募資計畫書內容（自由輸入或貼上文字）
+      <textarea id="cDesc" style="min-height:150px">產品：AI 醫療影像輔助判讀系統（胸部 X 光、肺結節），已取得 TFDA 醫材許可，美國 FDA 510(k) 申請中。
 商業模式：向醫院收取一次性軟體授權費，每套約新台幣 300 萬元，目前導入 18 家醫院。
 財務：2025 年營收新台幣 6,200 萬元，毛利率 72%，稅後虧損 3,800 萬元，每月燒錢約 450 萬元，帳上現金 5,100 萬元。
 專利：台灣核准專利 3 件、美國申請中 2 件，演算法部分以營業秘密保護。
 團隊：創辦人為放射科醫師，技術長曾任大型科技公司 AI 研究員，研發人員 22 人。
 募資：本輪計畫募資新台幣 2 億元，投資前估值 12 億元，資金用於美國市場、臨床驗證與新適應症。
 目標：三年內登錄興櫃，五年內申請上櫃（創新板或一般板）。</textarea></label>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>上傳文件</h3><span class="pill" id="upCount"></span></div>
+    <label for="cFile" id="drop" class="drop"><b>拖曳檔案到這裡，或點擊選擇檔案</b><span>支援 PDF、Word（.docx）、Excel（.xlsx / .xls）、CSV、TXT、Markdown，可一次選多個</span><input type="file" id="cFile" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json"></label>
+    <p class="note" id="upStatus" style="margin-top:10px">年報、財報、募資計畫書、專利清單、臨床報告、合約都可以上傳。系統會依檔名自動分類，可再手動調整。掃描成圖片的 PDF 無法讀出文字，請改上傳文字版。</p>
+    <div class="tw" style="margin-top:10px"><table id="fileTable"></table></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>財務數據（新台幣百萬元）</h3><div class="row"><button type="button" class="ghost" id="finAddYear">新增年度</button><button type="button" class="ghost" id="finAI" disabled>AI 從文件擷取</button><button type="button" id="finApply">帶入估值計算器</button></div></div>
+    <div class="tw" style="margin-top:10px"><table id="finTable"></table></div>
+    <p class="note" id="finMsg" style="margin-top:10px">支出類（資本支出）請填正數。帶入時以最新一年計算：自由現金流＝營業現金流－資本支出，淨負債＝有息負債－期末現金。</p>
+  </div>
+  <div class="row" style="margin-top:14px"><a href="#committee"><button type="button">前往投資決策委員會</button></a><a href="#checklist"><button type="button" class="ghost">查看補件清單</button></a></div>
+</section>
+
+<!-- ============ COMMITTEE ============ -->
+<section class="view" id="v-committee">
+  <div class="eyebrow">AI 投資決策委員會</div>
+  <h1>召開投資決策委員會</h1>
+  <p class="lede">先在「案件資料中心」上傳文件、輸入財務數字，再選擇要出席的專家 Agent。每位專家依自己的專業出具意見，最後由總控 Agent 交叉驗證並給出評級。</p>
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><div><div class="navgroup" style="padding-left:0;color:var(--muted)">目前案件</div><h3 id="cmSum"></h3><p id="cmSub"></p></div><a href="#data"><button type="button" class="ghost">編輯案件資料與上傳文件</button></a></div>
     <div class="row" id="codeRow" style="margin-top:10px;display:none"><label for="accessCode" style="flex-direction:row;align-items:center;gap:8px">AI 存取碼<input id="accessCode" type="password" autocomplete="off" style="width:200px"></label><span style="font-size:13px;color:var(--muted)">由網站管理者提供</span></div>
-    <div class="row" style="margin-top:10px">
-      <input type="file" id="cFile" accept=".txt,.md,.csv,.json" style="max-width:320px">
-    </div>
     <div style="margin-top:12px"><div class="navgroup" style="padding-left:0;color:var(--muted)">出席的專家 Agent</div><div class="chips" id="agentPick"></div></div>
     <div class="row" style="margin-top:14px">
       <button type="button" id="runCommittee" disabled>召開委員會</button>
@@ -535,15 +562,15 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const val=id=>parseFloat(document.getElementById(id).value)||0;
 
 /* ---------- routing ---------- */
-const views=['overview','committee','ipo','bp','valuation','biotech','ma','ip','industry','cases','checklist','score','roadmap'];
+const views=['overview','data','committee','ipo','bp','valuation','biotech','ma','ip','industry','cases','checklist','score','roadmap'];
 function route(){const h=location.hash.slice(1);const v=views.includes(h)?h:'overview';$$('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));$$('nav.side a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));$('#side').classList.remove('open');window.scrollTo(0,0)}
 addEventListener('hashchange',route);route();
 $('#menuBtn').onclick=()=>$('#side').classList.toggle('open');
 
 /* ---------- AI ---------- */
 let ai=null;
-function disableAI(msg){$$('.ai-btn,#runCommittee').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
-function enableAI(){$$('.ai-btn,#runCommittee').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
+function disableAI(msg){$$('.ai-btn,#runCommittee,#finAI').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
+function enableAI(){$$('.ai-btn,#runCommittee,#finAI').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
 function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{localStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let text='';for(;;){const{done,value}=await rd.read();if(done)break;text+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text})}return{text}})()}
 (async()=>{
   let s=null;
@@ -555,7 +582,7 @@ function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localSto
   disableAI('此檢視無法呼叫 AI。');
 })();
 function md(t){const lines=String(t).split('\n');let h='',inList=false;for(let l of lines){const s=esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');if(/^\s*[-*•]\s+/.test(l)||/^\s*\d+[.)、]\s+/.test(l)){if(!inList){h+='<ul>';inList=true}h+='<li>'+s.replace(/^\s*([-*•]|\d+[.)、])\s+/,'')+'</li>';continue}if(inList){h+='</ul>';inList=false}if(/^#{1,4}\s/.test(l))h+='<h4>'+s.replace(/^#+\s/,'')+'</h4>';else if(s.trim()==='---'){}else if(s.trim())h+='<p>'+s+'</p>'}if(inList)h+='</ul>';return h}
-function caseText(){return `公司／專案：${$('#cName').value}\n產業：${$('#cInd').value}\n資本市場階段：${$('#cStage').value}\n委託人角色：${$('#cRole').value}\n\n公司資料：\n${$('#cDesc').value}`}
+function caseText(){const d=cur();let t=`公司／專案：${d.name}\n產業：${d.ind}\n資本市場階段：${d.stage}\n委託人角色：${d.role}\n\n公司說明：\n${d.desc}`;const ft=finText(d);if(ft)t+=`\n\n財務數據（新台幣百萬元）：\n${ft}`;let budget=CASE_DOC_LIMIT;const docs=d.files.map(f=>{const take=f.text.slice(0,Math.max(0,budget));budget-=take.length;return take?`【文件：${f.name}｜${f.cat}${take.length<f.text.length?'｜已截斷':''}】\n${take}`:''}).filter(Boolean);if(docs.length)t+=`\n\n上傳文件內容：\n${docs.join('\n\n')}`;return t}
 const BASE='你是台灣「AI Capital Intelligence」投資決策平台中的專家。以繁體中文（台灣用語）回答，使用 Markdown 標題與條列，精簡具體，引用案件中的數字。資料不足時明確列出「尚缺資料」，不得捏造數據或案例；涉及法規門檻時註明需以主管機關最新規定為準。你的意見屬分析輔助，不構成正式法律、會計或投資意見。';
 async function ask(prompt,out,opts={}){out.innerHTML='<p style="color:var(--muted)">分析中…</p>';try{const r=await ai(prompt,{modelTier:opts.tier||'default',signal:opts.signal,onText:({text})=>{out.innerHTML=md(text)}});out.innerHTML=md(r.text);return r.text}catch(e){if(e&&e.name==='AbortError'||e?.code==='aborted'){out.innerHTML+='<p class="note">已停止。</p>';throw e}out.innerHTML='<p class="note">無法完成：'+esc(e?.code==='rate_limited'?'使用次數暫時達上限，請稍後再試。':e?.code==='not_granted'?'尚未允許此頁使用 Claude。':e?.code==='bad_code'?'存取碼錯誤，請在「投資決策委員會」頁輸入正確存取碼。':e?.code==='no_key'?'伺服器尚未設定 API Key。':(e?.message||'未知錯誤'))+'</p>';throw e}}
 
@@ -572,7 +599,6 @@ const AGENTS=[
 $('#agentChips').innerHTML=AGENTS.map(a=>`<span class="chip">${a.name}<small>${a.brain}</small></span>`).join('');
 $('#agentPick').innerHTML=AGENTS.map(a=>`<label class="chk chip" for="pk-${a.id}"><input type="checkbox" id="pk-${a.id}" checked> ${a.name}</label>`).join('');
 $('#agentCards').innerHTML=AGENTS.map(a=>`<div class="card agent" id="ag-${a.id}"><div class="hd"><h3>${a.name}</h3><span class="pill" id="agp-${a.id}">待命</span></div><p>${a.focus}</p><div class="out md" id="ago-${a.id}"></div></div>`).join('');
-$('#cFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#cDesc').value=String(r.result).slice(0,60000)};r.readAsText(f)};
 let ctrl=null,reportText='';
 $('#runCommittee').onclick=async()=>{
   if(!ai)return;
@@ -597,7 +623,7 @@ $('#runCommittee').onclick=async()=>{
     const m=t.match(/評級[:：]\s*(值得深入評估|有條件評估|需要改善|不建議)/);
     const r=m?m[1]:'完成';$('#orchPill').textContent=r;
     $('#orchPill').className='pill '+({'值得深入評估':'good','有條件評估':'warn','需要改善':'warn','不建議':'bad'}[r]||'');
-    reportText=`# ${$('#cName').value} 投資決策報告\n\n${t}\n\n---\n${all}`;
+    reportText=`# ${cur().name} 投資決策報告\n\n${t}\n\n---\n${all}`;
     st.textContent='委員會完成，報告如下。';$('#orchCard').scrollIntoView({behavior:'smooth'});
   }catch(e){st.textContent='已停止或發生錯誤，可修改資料後重新召開。'}
   $('#runCommittee').disabled=false;$('#stopCommittee').disabled=true;
@@ -712,7 +738,7 @@ $('#kFilter').onchange=renderCases;renderCases();
 /* ---------- checklist ---------- */
 const CK=[['公司基本資料','公司簡介、股權結構、董監事、關係企業','all'],['財務資料','近 3–5 年財報、近 12–24 個月月報','all'],['營運資料','營收明細、客戶、產品、訂單、毛利','all'],['市場資料','TAM、SAM、SOM、競爭對手、市占率','all'],['技術資料','技術規格、研發進度、技術壁壘','all'],['法律資料','訴訟、合約、股權爭議、重大法律風險','all'],['專利資料','專利清單、權利人、授權、專利狀態','bio,hw'],['臨床資料','臨床設計、試驗結果、法規進度','bio'],['人才資料','核心團隊、研發主管、關鍵人才','all'],['募資資料','歷次增資、投資人、估值、資金用途','all'],['未來預測','3–5 年營收、成本、資本支出、現金流','all'],['退出規劃','IPO、併購、股權轉讓','all']];
 const ckState=store.get('ck',[1,1,1,0,1,0,1,0,1,1,0,0]);
-function renderCk(){const ind=$('#ckInd').value;let req=0,have=0,miss=[];$('#ckTable').innerHTML='<tr><th></th><th>類別</th><th>內容</th><th>重要性</th></tr>'+CK.map((c,i)=>{const must=c[2]==='all'||c[2].split(',').includes(ind);if(must){req++;if(ckState[i])have++;else miss.push(c)}return`<tr><td><input type="checkbox" id="ck-${i}" ${ckState[i]?'checked':''} aria-label="${c[0]}"></td><td><label for="ck-${i}" style="color:var(--text);font-size:14px">${c[0]}</label></td><td style="color:var(--muted)">${c[1]}</td><td><span class="pill ${must?'':'good'}">${must?'必備':'選備'}</span></td></tr>`}).join('');$$('#ckTable input').forEach((c,i)=>c.onchange=()=>{ckState[i]=c.checked?1:0;store.set('ck',ckState);renderCk()});$('#ckKpi').innerHTML=[['必備資料完成',`${have} / ${req}`],['待補件',miss.length],['資料完整度',pct(have/req,0)],['可進入評估',have/req>=0.8?'是':'尚未']].map(k=>`<div class="card kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');$('#ckMissing').innerHTML=miss.length?'<ul>'+miss.map(m=>`<li><b>${m[0]}</b>：${m[1]}</li>`).join('')+'</ul>':'<p>必備資料已齊全。</p>';missText=miss.map(m=>`□ ${m[0]}：${m[1]}`).join('\n')}
+function renderCk(){const ind=$('#ckInd').value;const up=new Set((typeof cur==='function'&&deals?cur().files:[]).map(f=>f.cat));let req=0,have=0,miss=[];$('#ckTable').innerHTML='<tr><th></th><th>類別</th><th>內容</th><th>重要性</th></tr>'+CK.map((c,i)=>{const must=c[2]==='all'||c[2].split(',').includes(ind);const got=ckState[i]||up.has(c[0]);if(must){req++;if(got)have++;else miss.push(c)}return`<tr><td><input type="checkbox" id="ck-${i}" ${got?'checked':''} ${up.has(c[0])?'disabled':''} aria-label="${c[0]}"></td><td><label for="ck-${i}" style="color:var(--text);font-size:14px">${c[0]}</label>${up.has(c[0])?' <span class="pill good">已上傳</span>':''}</td><td style="color:var(--muted)">${c[1]}</td><td><span class="pill ${must?'':'good'}">${must?'必備':'選備'}</span></td></tr>`}).join('');$$('#ckTable input').forEach((c,i)=>c.onchange=()=>{ckState[i]=c.checked?1:0;store.set('ck',ckState);renderCk()});$('#ckKpi').innerHTML=[['必備資料完成',`${have} / ${req}`],['待補件',miss.length],['資料完整度',pct(have/req,0)],['可進入評估',have/req>=0.8?'是':'尚未']].map(k=>`<div class="card kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');$('#ckMissing').innerHTML=miss.length?'<ul>'+miss.map(m=>`<li><b>${m[0]}</b>：${m[1]}</li>`).join('')+'</ul>':'<p>必備資料已齊全。</p>';missText=miss.map(m=>`□ ${m[0]}：${m[1]}`).join('\n')}
 let missText='';$('#ckInd').onchange=renderCk;$('#copyMissing').onclick=e=>copy('投資評估補件清單\n'+missText,e.target);renderCk();
 const FIN=['損益表：營收、毛利、營業利益、稅後淨利','資產負債表：現金、應收帳款、存貨、負債、淨值','現金流量表：營業、投資、籌資現金流','EBITDA 與 EBITDA Margin','營運資金及每月 Burn Rate','Cash Runway','應收帳款帳齡與呆帳','關係人交易','或有負債與表外承諾','歷次增資及股權稀釋'];
 $('#finList').innerHTML='<div class="md"><ul>'+FIN.map(f=>`<li>${f}</li>`).join('')+'</ul></div>';
@@ -726,6 +752,73 @@ let sc=store.get('score',SC.map(s=>s[2])),veto=store.get('veto',[0,0,0,0]);
 function renderScoreRows(){$('#scoreRows').innerHTML=SC.map((s,i)=>`<div class="srow"><span>${s[0]}<small>${s[3]}</small></span><input type="range" min="0" max="${s[1]}" value="${sc[i]}" id="sc-${i}" aria-label="${s[0]}"><span class="num" id="scv-${i}"></span></div>`).join('');$$('#scoreRows input').forEach((e,i)=>e.oninput=()=>{sc[i]=+e.value;calcScore()});$('#vetoList').innerHTML=VETO.map((v,i)=>`<label class="chk" for="vt-${i}"><input type="checkbox" id="vt-${i}" ${veto[i]?'checked':''}> ${v}</label>`).join('');$$('#vetoList input').forEach((e,i)=>e.onchange=()=>{veto[i]=e.checked?1:0;calcScore()});calcScore()}
 function calcScore(){store.set('score',sc);store.set('veto',veto);let t=0;SC.forEach((s,i)=>{t+=sc[i];$('#scv-'+i).textContent=`${sc[i]} / ${s[1]}`});$('#scoreV').textContent=t+' / 100';const vt=veto.some(Boolean);let r,c,txt;if(vt){r='否決';c='bad';txt='觸發否決條件：先釐清問題，總分暫不採用。'}else if(t>=80){r='值得深入評估';c='good';txt='進入投資條件設計、完整 DD 與投資簡報。'}else if(t>=65){r='有條件評估';c='warn';txt='補齊尚缺資料、針對低分項目設定投資前提或保護條款。'}else if(t>=50){r='需要改善';c='warn';txt='建議先執行企業改善與募資計畫調整，再重新評估。'}else{r='不建議';c='bad';txt='產出風險報告與暫緩建議。'}$('#scorePill').textContent=r;$('#scorePill').className='pill '+c;$('#scoreText').textContent=txt;$('#scoreCard').className='card stripe '+c}
 $('#resetScore').onclick=()=>{sc=SC.map(s=>s[2]);veto=[0,0,0,0];renderScoreRows()};renderScoreRows();
+
+/* ---------- deals / data center ---------- */
+const CASE_DOC_LIMIT=90000, FILE_LIMIT=60000;
+const CATS=['公司基本資料','財務資料','營運資料','市場資料','技術資料','法律資料','專利資料','臨床資料','人才資料','募資資料','未來預測','退出規劃','其他'];
+const CAT_RULES=[[/財報|財務|損益|資產負債|現金流|年報|查核|簽證|financial|10-k|annual/i,'財務資料'],[/募資|計畫書|bp|pitch|deck|簡報|投資人/i,'募資資料'],[/專利|patent|智財|ip/i,'專利資料'],[/臨床|clinical|trial|試驗|tfda|fda/i,'臨床資料'],[/合約|契約|法律|訴訟|contract|nda|legal/i,'法律資料'],[/股權|股東|董監|章程|登記|簡介|profile/i,'公司基本資料'],[/市場|產業|競爭|market|industry/i,'市場資料'],[/技術|研發|規格|tech|spec|白皮書/i,'技術資料'],[/團隊|履歷|組織|team|cv|resume/i,'人才資料'],[/預測|預算|forecast|budget|projection/i,'未來預測'],[/營運|營收|客戶|訂單|銷售|月報|sales|kpi/i,'營運資料'],[/退出|併購|exit|m&a/i,'退出規劃']];
+const guessCat=n=>{for(const[r,c]of CAT_RULES)if(r.test(n))return c;return '其他'};
+const FIN_ROWS=[['rev','營收'],['gp','毛利'],['op','營業利益'],['ni','稅後淨利'],['ebitda','EBITDA'],['ocf','營業現金流'],['capex','資本支出'],['cash','期末現金'],['debt','有息負債']];
+const emptyFin=()=>({years:['2023','2024','2025'],v:Object.fromEntries(FIN_ROWS.map(r=>[r[0],[null,null,null]]))});
+const newDeal=(o={})=>Object.assign({id:'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:'新投資案件',ind:'AI 醫療',stage:'未公開發行／新創',role:'投資人：評估是否投資',desc:'',files:[],fin:emptyFin()},o);
+const DEMO_DESC=$('#cDesc').value;
+var deals=null,curId=null;
+try{deals=JSON.parse(localStorage.getItem('aci_deals')||'null');curId=localStorage.getItem('aci_cur')}catch(e){}
+if(!Array.isArray(deals)||!deals.length){const f=emptyFin();Object.assign(f.v,{rev:[28,41,62],gp:[19,29,45],op:[-50,-44,-40],ni:[-52,-45,-38],ebitda:[-40,-33,-26],ocf:[-45,-40,-35],capex:[5,6,8],cash:[40,70,51],debt:[0,10,15]});deals=[newDeal({name:'示範：明日醫影 AI 股份有限公司',desc:DEMO_DESC,fin:f})]}
+if(!deals.some(d=>d.id===curId))curId=deals[0].id;
+function cur(){return deals.find(d=>d.id===curId)||deals[0]}
+function saveDeals(){try{localStorage.setItem('aci_deals',JSON.stringify(deals));localStorage.setItem('aci_cur',curId);return true}catch(e){$('#upStatus').textContent='瀏覽器儲存空間不足：這次上傳的文件內容只會保留到關閉頁面為止。可刪除不需要的文件或案件釋出空間。';return false}}
+function finText(d){const y=d.fin.years;const has=FIN_ROWS.some(r=>d.fin.v[r[0]].some(x=>x!==null&&x!==''));if(!has)return '';return '項目\t'+y.join('\t')+'\n'+FIN_ROWS.map(r=>r[1]+'\t'+y.map((_,i)=>d.fin.v[r[0]][i]??'').join('\t')).join('\n')}
+const FIELDS=[['cName','name'],['cInd','ind'],['cStage','stage'],['cRole','role'],['cDesc','desc']];
+function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderCmSum()}
+function renderDealSel(){$('#dealSel').innerHTML=deals.map(d=>`<option value="${d.id}" ${d.id===curId?'selected':''}>${esc(d.name)}</option>`).join('')}
+function renderCmSum(){const d=cur();$('#cmSum').textContent=d.name;const chars=d.files.reduce((s,f)=>s+f.text.length,0);$('#cmSub').textContent=`${d.ind}｜${d.stage}｜文件 ${d.files.length} 份（約 ${fmt(chars)} 字）｜財務數據 ${finText(d)?'已輸入':'未輸入'}`}
+FIELDS.forEach(([id,k])=>{const el=$('#'+id);const h=()=>{cur()[k]=el.value;saveDeals();if(k==='name')renderDealSel();renderCmSum()};el.addEventListener('input',h);el.addEventListener('change',h)});
+$('#dealSel').onchange=e=>{curId=e.target.value;saveDeals();loadDeal();renderCk()};
+$('#dealNew').onclick=()=>{const d=newDeal();deals.push(d);curId=d.id;saveDeals();loadDeal();renderCk();$('#cName').focus();$('#cName').select()};
+let delArm=0;$('#dealDel').onclick=e=>{if(Date.now()-delArm>4000){delArm=Date.now();e.target.textContent='再按一次確認刪除';setTimeout(()=>e.target.textContent='刪除此案件',4000);return}deals=deals.filter(d=>d.id!==curId);if(!deals.length)deals=[newDeal()];curId=deals[0].id;saveDeals();loadDeal();renderCk();e.target.textContent='刪除此案件';delArm=0};
+
+const LIBS={pdf:['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'],docx:['https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'],xlsx:['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js']};
+const loaded={};function loadScript(src){return loaded[src]||(loaded[src]=new Promise((ok,no)=>{const t=document.createElement('script');t.src=src;t.onload=ok;t.onerror=()=>{delete loaded[src];no(new Error('無法載入解析元件，請檢查網路後重試'))};document.head.appendChild(t)}))}
+async function loadLib(k){for(const s of LIBS[k])await loadScript(s)}
+async function extract(file){const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(ext==='pdf'){await loadLib('pdf');const lib=window.pdfjsLib;lib.GlobalWorkerOptions.workerSrc=LIBS.pdf[1];const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;let out=[];for(let i=1;i<=doc.numPages;i++){const c=await (await doc.getPage(i)).getTextContent();out.push(c.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim());if(out.join('\n').length>FILE_LIMIT)break}return{text:out.map((t,i)=>`[第 ${i+1} 頁] ${t}`).join('\n'),pages:doc.numPages}}
+  if(ext==='docx'){await loadLib('docx');const r=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});return{text:r.value}}
+  if(ext==='xlsx'||ext==='xls'){await loadLib('xlsx');const wb=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array'});return{text:wb.SheetNames.map(n=>`## 工作表：${n}\n`+XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false})).join('\n\n')}}
+  if(['txt','md','csv','json'].includes(ext))return{text:await file.text()};
+  throw new Error('不支援的檔案格式（.'+ext+'）')}
+async function handleFiles(list){const files=[...list];if(!files.length)return;const st=$('#upStatus');const d=cur();let ok=0,fail=[];
+  for(const [i,f] of files.entries()){st.textContent=`解析中（${i+1}/${files.length}）：${f.name}`;
+    if(f.size>25*1024*1024){fail.push(f.name+'：檔案超過 25 MB');continue}
+    try{const r=await extract(f);let text=(r.text||'').trim();const full=text.length;text=text.slice(0,FILE_LIMIT);d.files.push({name:f.name,size:f.size,cat:guessCat(f.name),text,full,pages:r.pages||null,at:new Date().toISOString().slice(0,10)});ok++}catch(e){fail.push(f.name+'：'+(e.message||'解析失敗'))}}
+  const saved=saveDeals();renderFiles();renderCk();renderCmSum();
+  st.textContent=`已加入 ${ok} 份文件。`+(fail.length?' 未成功：'+fail.join('；'):'')+(saved?'':' 注意：瀏覽器儲存空間不足，重新整理後需重新上傳。')}
+$('#cFile').onchange=e=>{handleFiles(e.target.files);e.target.value=''};
+const drop=$('#drop');['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over')}));['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+function renderFiles(){const d=cur();$('#upCount').textContent=`${d.files.length} 份文件`;if(!d.files.length){$('#fileTable').innerHTML='<tr><td style="color:var(--muted)">尚未上傳文件。</td></tr>';return}
+  $('#fileTable').innerHTML='<tr><th>檔名</th><th>分類</th><th class="num">大小</th><th class="num">讀出字數</th><th>狀態</th><th></th></tr>'+d.files.map((f,i)=>{const scan=f.pages?f.text.replace(/\[第 \d+ 頁\]/g,'').trim().length<f.pages*20:!f.text.trim();return`<tr><td>${esc(f.name)}<div style="font-size:12px;color:var(--muted)">${f.at}${f.pages?'｜'+f.pages+' 頁':''}</div></td><td><select data-i="${i}" aria-label="分類" style="min-width:120px">${CATS.map(c=>`<option ${c===f.cat?'selected':''}>${c}</option>`).join('')}</select></td><td class="num">${fmt(f.size/1024)} KB</td><td class="num">${fmt(f.full||f.text.length)}</td><td>${scan?'<span class="pill bad">讀不到文字</span>':(f.full>f.text.length?'<span class="pill warn">過長，已截斷</span>':'<span class="pill good">已讀取</span>')}</td><td class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="ghost" data-view="${i}">預覽</button><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr><tr id="pv-${i}" style="display:none"><td colspan="6"><pre style="white-space:pre-wrap;max-height:260px;overflow:auto;font-size:12.5px;margin:0">${esc(f.text.slice(0,4000))}${f.text.length>4000?'\n…':''}</pre></td></tr>`}).join('');
+  $$('#fileTable select').forEach(e=>e.onchange=()=>{d.files[e.dataset.i].cat=e.value;saveDeals();renderCk()});
+  $$('#fileTable [data-del]').forEach(b=>b.onclick=()=>{d.files.splice(+b.dataset.del,1);saveDeals();renderFiles();renderCk();renderCmSum()});
+  $$('#fileTable [data-view]').forEach(b=>b.onclick=()=>{const r=$('#pv-'+b.dataset.view);r.style.display=r.style.display==='none'?'':'none'})}
+function renderFin(){const d=cur(),F=d.fin;const yrs=F.years;const n=(k,i)=>F.v[k][i];
+  const dr=[['毛利率',i=>n('gp',i)!=null&&n('rev',i)?pct(n('gp',i)/n('rev',i)):'—'],['自由現金流',i=>n('ocf',i)!=null&&n('capex',i)!=null?fmt(n('ocf',i)-n('capex',i),1):'—'],['淨負債',i=>n('debt',i)!=null&&n('cash',i)!=null?fmt(n('debt',i)-n('cash',i),1):'—']];
+  $('#finTable').innerHTML='<tr><th>項目</th>'+yrs.map((y,i)=>`<th><input value="${esc(y)}" data-y="${i}" aria-label="年度" class="num" style="width:80px"></th>`).join('')+`<th></th></tr>`+FIN_ROWS.map(r=>`<tr><td>${r[1]}</td>`+yrs.map((_,i)=>`<td><input class="num" type="number" step="any" value="${F.v[r[0]][i]??''}" data-k="${r[0]}" data-i="${i}" aria-label="${r[1]} ${yrs[i]}"></td>`).join('')+'<td></td></tr>').join('')+dr.map(r=>`<tr><td style="color:var(--muted)">${r[0]}</td>`+yrs.map((_,i)=>`<td class="num" style="color:var(--muted)">${r[1](i)}</td>`).join('')+'<td></td></tr>').join('')+'<tr><td></td>'+yrs.map((_,i)=>`<td><button type="button" class="ghost" data-dely="${i}" aria-label="刪除年度" style="padding:2px 8px">刪除年度</button></td>`).join('')+'<td></td></tr>';
+  $$('#finTable input[data-k]').forEach(e=>e.onchange=()=>{F.v[e.dataset.k][e.dataset.i]=e.value===''?null:parseFloat(e.value);saveDeals();renderFin();renderCmSum()});
+  $$('#finTable input[data-y]').forEach(e=>e.onchange=()=>{F.years[e.dataset.y]=e.value;saveDeals()});
+  $$('#finTable [data-dely]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dely;if(F.years.length<=1)return;F.years.splice(i,1);FIN_ROWS.forEach(r=>F.v[r[0]].splice(i,1));saveDeals();renderFin()})}
+$('#finAddYear').onclick=()=>{const F=cur().fin;const last=parseInt(F.years[F.years.length-1])||2025;F.years.push(String(last+1));FIN_ROWS.forEach(r=>F.v[r[0]].push(null));saveDeals();renderFin()};
+$('#finApply').onclick=()=>{const F=cur().fin;const pick=k=>{for(let i=F.years.length-1;i>=0;i--){const v=F.v[k][i];if(v!==null&&v!==''&&isFinite(v))return v}return null};const set=(id,v)=>{if(v!==null&&isFinite(v)){$('#'+id).value=+(+v).toFixed(2);return 1}return 0};
+  const ocf=pick('ocf'),capex=pick('capex'),cash=pick('cash'),debt=pick('debt');const fcf=ocf!==null&&capex!==null?ocf-capex:null;const nd=cash!==null?(debt||0)-cash:null;let c=0;
+  c+=set('dFcf',fcf)+set('dNd',nd)+set('mNi',pick('ni'))+set('mRev',pick('rev'))+set('mEb',pick('ebitda'))+set('mNd',nd)+set('cwCash',cash);
+  renderDcf();renderMult();runway();
+  $('#finMsg').innerHTML=c?`已帶入 ${c} 個欄位到企業估值中心與現金跑道。`+(fcf!==null&&fcf<=0?' <b>最新自由現金流為負</b>，DCF 結果不具參考性，建議以同業倍數（P/S）或生技 rNPV 估值。':'')+' <a href="#valuation">前往企業估值中心 →</a>':'財務表中沒有可帶入的數字。'};
+$('#finAI').onclick=async e=>{if(!ai)return;const d=cur();if(!d.files.length&&!d.desc){$('#finMsg').textContent='請先上傳財報或輸入公司說明。';return}const b=e.target;b.disabled=true;$('#finMsg').textContent='AI 正在從文件擷取財務數字…';
+  let docs='',budget=CASE_DOC_LIMIT;d.files.filter(f=>f.cat==='財務資料').concat(d.files.filter(f=>f.cat!=='財務資料')).forEach(f=>{const t=f.text.slice(0,Math.max(0,budget));budget-=t.length;if(t)docs+=`【${f.name}】\n${t}\n\n`});
+  const prompt=`從以下公司資料擷取年度財務數字。只回傳一個 JSON 物件，不要任何其他文字。單位一律換算為新台幣百萬元（原幣非新台幣時註明於 note）。格式：{"years":["2023","2024","2025"],"rev":[],"gp":[],"op":[],"ni":[],"ebitda":[],"ocf":[],"capex":[],"cash":[],"debt":[],"note":"資料來源與換算說明"}。各陣列長度與 years 相同、依年度由舊到新；找不到的值填 null，不得推估。capex 以正數表示支出；EBITDA 若文件未列出可由營業利益加折舊攤銷計算並於 note 說明，否則填 null。\n\n公司說明：\n${d.desc}\n\n文件：\n${docs}`;
+  try{const r=await ai(prompt,{modelTier:'default'});const t=r.text;const j=JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1));if(!Array.isArray(j.years)||!j.years.length)throw new Error('格式不符');const F={years:j.years.map(String),v:{}};FIN_ROWS.forEach(([k])=>{F.v[k]=j.years.map((_,i)=>{const v=(j[k]||[])[i];return v===null||v===undefined||v===''||!isFinite(+v)?null:+v})});d.fin=F;saveDeals();renderFin();renderCmSum();$('#finMsg').textContent='已擷取完成，請逐項核對原始文件。'+(j.note?' AI 說明：'+j.note:'')}
+  catch(err){$('#finMsg').textContent='擷取失敗：'+(err?.code==='bad_code'?'存取碼錯誤，請到「投資決策委員會」頁輸入。':err?.message||'AI 回應無法解析，請重試或手動輸入。')}
+  b.disabled=false};
+loadDeal();renderCk();
 })();
 </script>
 </body>
