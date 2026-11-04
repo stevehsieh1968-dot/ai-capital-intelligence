@@ -273,8 +273,11 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
     <div class="row" style="margin-top:14px">
       <button type="button" id="runCommittee" disabled>召開委員會</button>
       <button type="button" class="ghost" id="stopCommittee" disabled>停止</button>
+      <label class="chk" for="forceRerun" style="margin:0"><input type="checkbox" id="forceRerun"> 全部重新分析（忽略先前結果）</label>
       <span id="cStatus" class="note" style="display:none"></span>
     </div>
+    <p class="agst" id="usageLine" style="display:none;margin-top:8px"></p>
+    <p class="agst" style="margin-top:6px">省 token 機制：全體委員會共用一份快取的案件文件；資料未變更的專家沿用先前結果；單獨分析時每位專家只讀取與其專業相關的文件。</p>
   </div>
   <div class="grid g2" id="agentCards" style="margin-top:14px"></div>
   <div class="card stripe" id="orchCard" style="margin-top:14px;display:none">
@@ -575,21 +578,29 @@ $('#menuBtn').onclick=()=>$('#side').classList.toggle('open');
 let ai=null,dl=null;
 function disableAI(msg){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
 function enableAI(){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
-function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{localStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let text='';for(;;){const{done,value}=await rd.read();if(done)break;text+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text})}return{text}})()}
+let CACHE_OK=false;const USAGE={calls:0,in:0,cr:0,cw:0,out:0};
+function trackUsage(u){if(!u)return;USAGE.calls++;USAGE.in+=u.input_tokens||0;USAGE.cr+=u.cache_read_input_tokens||0;USAGE.cw+=u.cache_creation_input_tokens||0;USAGE.out+=u.output_tokens||0;const el=document.getElementById('usageLine');if(el){const tot=USAGE.in+USAGE.cr+USAGE.cw;el.style.display='';el.textContent=`本頁累計 AI 用量：${USAGE.calls} 次呼叫｜輸入 ${fmt(tot)} token，其中 ${fmt(USAGE.cr)}（${tot?Math.round(USAGE.cr/tot*100):0}%）由快取讀取、${fmt(USAGE.cw)} 寫入快取｜輸出 ${fmt(USAGE.out)} token`}}
+function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,system:opts.system||'',context:opts.context||'',cache:opts.cache!==false,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{localStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let raw='';const vis=()=>{const k=raw.indexOf('\u0000');return k<0?raw:raw.slice(0,k)};for(;;){const{done,value}=await rd.read();if(done)break;raw+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text:vis()})}const k=raw.indexOf('\u0000');let usage=null;if(k>=0){try{usage=JSON.parse(raw.slice(k+1))}catch(e){}}trackUsage(usage);return{text:vis(),usage}})()}
 (async()=>{
   let s=null;
   if(window.claude&&claude.use){try{s=await claude.use('sample')}catch(e){s=null}}
   try{if(window.claude&&claude.use)claude.use('downloads').then(x=>{dl=x}).catch(()=>{})}catch(e){}
-  if(s){ai=(p,o)=>s(p,o);return}
+  if(s){ai=(p,o={})=>s([o.system,o.context,p].filter(Boolean).join('\n\n'),{modelTier:o.modelTier,signal:o.signal,onText:o.onText});CACHE_OK=false;return}
   try{const r=await fetch('/api/ai',{method:'GET'});const j=await r.json();
-    if(j.ok){ai=serverAI;if(j.needsCode){$('#codeRow').style.display='';try{$('#accessCode').value=localStorage.getItem('aci_code')||''}catch(e){}}enableAI();return}
+    if(j.ok){ai=serverAI;CACHE_OK=true;if(j.needsCode){$('#codeRow').style.display='';try{$('#accessCode').value=localStorage.getItem('aci_code')||''}catch(e){}}enableAI();return}
     disableAI('伺服器尚未設定 ANTHROPIC_API_KEY，AI 功能暫停。');return}catch(e){}
   disableAI('此檢視無法呼叫 AI。');
 })();
 function md(t){const lines=String(t).split('\n');let h='',inList=false;for(let l of lines){const s=esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');if(/^\s*[-*•]\s+/.test(l)||/^\s*\d+[.)、]\s+/.test(l)){if(!inList){h+='<ul>';inList=true}h+='<li>'+s.replace(/^\s*([-*•]|\d+[.)、])\s+/,'')+'</li>';continue}if(inList){h+='</ul>';inList=false}if(/^#{1,4}\s/.test(l))h+='<h4>'+s.replace(/^#+\s/,'')+'</h4>';else if(s.trim()==='---'){}else if(s.trim())h+='<p>'+s+'</p>'}if(inList)h+='</ul>';return h}
-function caseText(limit=CASE_DOC_LIMIT){const d=cur();let t=`公司／專案：${d.name}\n產業：${d.ind}\n資本市場階段：${d.stage}\n委託人角色：${d.role}\n\n公司說明：\n${d.desc}`;const ft=finText(d);if(ft)t+=`\n\n財務數據（新台幣百萬元）：\n${ft}`;let budget=limit;const docs=d.files.map(f=>{const take=f.text.slice(0,Math.max(0,budget));budget-=take.length;return take?`【文件：${f.name}｜${f.cat}${take.length<f.text.length?'｜已截斷':''}】\n${take}`:''}).filter(Boolean);if(docs.length)t+=`\n\n上傳文件內容：\n${docs.join('\n\n')}`;return t}
+function caseHeader(d){let t=`公司／專案：${d.name}\n產業：${d.ind}\n資本市場階段：${d.stage}\n委託人角色：${d.role}\n\n公司說明：\n${d.desc}`;const ft=finText(d);if(ft)t+=`\n\n財務數據（新台幣百萬元）：\n${ft}`;return t}
+function docBlock(files,limit){let budget=limit;const docs=files.map(f=>{const take=f.text.slice(0,Math.max(0,budget));budget-=take.length;return take?`【文件：${f.name}｜${f.cat}${take.length<f.text.length?'｜已截斷':''}】\n${take}`:''}).filter(Boolean);return docs.length?`\n\n上傳文件內容：\n${docs.join('\n\n')}`:''}
+function caseText(limit=CASE_DOC_LIMIT,filter=null){const d=cur();const files=filter?d.files.filter(filter):d.files;return caseHeader(d)+docBlock(files,limit)}
+const ROUTE={law:['公司基本資料','法律資料','募資資料','專利資料','退出規劃'],acct:['財務資料','營運資料','未來預測','募資資料','公司基本資料'],ib:['財務資料','募資資料','公司基本資料','未來預測','退出規劃'],vc:['募資資料','營運資料','市場資料','未來預測','退出規劃','人才資料','財務資料'],ind:['市場資料','技術資料','營運資料','募資資料'],ipc:['專利資料','臨床資料','技術資料','法律資料'],ma:['募資資料','市場資料','營運資料','退出規劃','公司基本資料','財務資料']};
+const routeFilter=a=>f=>f.cat==='其他'||ROUTE[a.id].includes(f.cat);
+function hash(str){let h=0x811c9dc5;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,0x01000193)}return (h>>>0).toString(36)+'.'+str.length.toString(36)}
+const PROMPT_VER='v2';
 const BASE='你是台灣「AI Capital Intelligence」投資決策平台中的專家。以繁體中文（台灣用語）回答，使用 Markdown 標題與條列，精簡具體，引用案件中的數字。資料不足時明確列出「尚缺資料」，不得捏造數據或案例；涉及法規門檻時註明需以主管機關最新規定為準。你的意見屬分析輔助，不構成正式法律、會計或投資意見。';
-async function ask(prompt,out,opts={}){out.innerHTML='<p style="color:var(--muted)">分析中…</p>';try{const r=await ai(prompt,{modelTier:opts.tier||'default',signal:opts.signal,onText:({text})=>{out.innerHTML=md(text)}});out.innerHTML=md(r.text);return r.text}catch(e){if(e&&e.name==='AbortError'||e?.code==='aborted'){out.innerHTML+='<p class="note">已停止。</p>';throw e}out.innerHTML='<p class="note">無法完成：'+esc(e?.code==='rate_limited'?'使用次數暫時達上限，請稍後再試。':e?.code==='not_granted'?'尚未允許此頁使用 Claude。':e?.code==='bad_code'?'存取碼錯誤，請在「投資決策委員會」頁輸入正確存取碼。':e?.code==='no_key'?'伺服器尚未設定 API Key。':(e?.message||'未知錯誤'))+'</p>';throw e}}
+async function ask(prompt,out,opts={}){out.innerHTML='<p style="color:var(--muted)">分析中…</p>';try{const r=await ai(prompt,{modelTier:opts.tier||'default',signal:opts.signal,system:opts.system,context:opts.context,cache:opts.cache,onText:({text})=>{out.innerHTML=md(text)}});out.innerHTML=md(r.text);return r.text}catch(e){if(e&&e.name==='AbortError'||e?.code==='aborted'){out.innerHTML+='<p class="note">已停止。</p>';throw e}out.innerHTML='<p class="note">無法完成：'+esc(e?.code==='rate_limited'?'使用次數暫時達上限，請稍後再試。':e?.code==='not_granted'?'尚未允許此頁使用 Claude。':e?.code==='bad_code'?'存取碼錯誤，請在「投資決策委員會」頁輸入正確存取碼。':e?.code==='no_key'?'伺服器尚未設定 API Key。':(e?.message||'未知錯誤'))+'</p>';throw e}}
 
 /* ---------- agents ---------- */
 const AGENTS=[
@@ -605,59 +616,70 @@ $('#agentChips').innerHTML=AGENTS.map(a=>`<span class="chip">${a.name}<small>${a
 $('#agentPick').innerHTML=AGENTS.map(a=>`<label class="chk chip" for="pk-${a.id}"><input type="checkbox" id="pk-${a.id}" checked> ${a.name}</label>`).join('');
 $('#agentCards').innerHTML=AGENTS.map(a=>`<div class="card agent" id="ag-${a.id}"><div class="hd"><h3>${a.name}</h3><span class="pill" id="agp-${a.id}">待命</span></div><p>${a.focus}</p>
 <label for="af-${a.id}" class="drop agdrop" id="agd-${a.id}"><b>上傳此 Agent 專屬文件</b><span>建議：${a.docs}</span><input type="file" id="af-${a.id}" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json"></label>
-<div class="agfiles" id="afl-${a.id}"></div><div class="row"><button type="button" class="ghost ag-run" data-run="${a.id}" disabled>單獨分析</button><span class="agst" id="ags-${a.id}"></span></div>
+<div class="agst" id="agr-${a.id}"></div><div class="agfiles" id="afl-${a.id}"></div><div class="row"><button type="button" class="ghost ag-run" data-run="${a.id}" disabled>單獨分析</button><span class="agst" id="ags-${a.id}"></span></div>
 <div class="out md" id="ago-${a.id}"></div></div>`).join('');
-function agentPrompt(a){const d=cur();const own=((d.agentFiles||{})[a.id])||[];let budget=AGENT_DOC_LIMIT;const docs=own.map(f=>{const t=f.text.slice(0,Math.max(0,budget));budget-=t.length;return t?`【專屬文件：${f.name}${t.length<f.text.length?'｜已截斷':''}】\n${t}`:''}).filter(Boolean);
-  return `${BASE}\n\n你的角色：${a.name}（${a.brain}）。專業範圍：${a.focus}。\n請只從你的專業出具意見${docs.length?'，並優先依據提供給你的專屬文件（引用時註明文件名稱）':''}，結構如下：\n### 關鍵發現（3–5 點）\n### 主要風險（標示 高／中／低）\n### 尚缺資料\n### 改善與加值建議\n### 本面向評分：X / 10（一句理由）\n全文約 350 字內。\n\n案件資料：\n${caseText(Math.max(20000,CASE_DOC_LIMIT-(AGENT_DOC_LIMIT-budget)))}${docs.length?'\n\n提供給你的專屬文件：\n'+docs.join('\n\n'):''}`}
+function ownDocs(a){const d=cur();const own=((d.agentFiles||{})[a.id])||[];let budget=AGENT_DOC_LIMIT;return own.map(f=>{const t=f.text.slice(0,Math.max(0,budget));budget-=t.length;return t?`【專屬文件：${f.name}${t.length<f.text.length?'｜已截斷':''}】\n${t}`:''}).filter(Boolean)}
+function agentFp(a){return hash(PROMPT_VER+a.id+caseText(CASE_DOC_LIMIT,routeFilter(a))+ownDocs(a).join('\n'))}
+function agentPrompt(a,mode){const docs=ownDocs(a);const shared=mode==='committee'&&CACHE_OK;
+  const context=`案件資料：\n${shared?caseText():caseText(CASE_DOC_LIMIT,routeFilter(a))}`;
+  const prompt=`你的角色：${a.name}（${a.brain}）。專業範圍：${a.focus}。\n請只從你的專業出具意見${docs.length?'，並優先依據提供給你的專屬文件（引用時註明文件名稱）':''}，結構如下：\n### 關鍵發現（3–5 點）\n### 主要風險（標示 高／中／低）\n### 尚缺資料\n### 改善與加值建議\n### 本面向評分：X / 10（一句理由）\n全文約 350 字內。${docs.length?'\n\n提供給你的專屬文件：\n'+docs.join('\n\n'):''}`;
+  return{system:BASE,context,prompt}}
 const agentResults={};
-async function runAgent(a,signal){$('#agp-'+a.id).textContent='分析中';$('#agp-'+a.id).className='pill';const t=await ask(agentPrompt(a),$('#ago-'+a.id),{signal});agentResults[a.id]=t;orchStale=true;$('#agp-'+a.id).textContent='完成';$('#agp-'+a.id).className='pill good';return t}
+function setPill(a,txt,cls){$('#agp-'+a.id).textContent=txt;$('#agp-'+a.id).className='pill'+(cls?' '+cls:'')}
+async function runAgent(a,signal,mode='single'){setPill(a,'分析中');const q=agentPrompt(a,mode);const t=await ask(q.prompt,$('#ago-'+a.id),{signal,system:q.system,context:q.context,cache:true});const d=cur();d.res=d.res||{};d.res[a.id]={fp:agentFp(a),text:t,at:(()=>{const t=new Date(),z=n=>String(n).padStart(2,'0');return `${t.getFullYear()}-${z(t.getMonth()+1)}-${z(t.getDate())} ${z(t.getHours())}:${z(t.getMinutes())}`})()};agentResults[a.id]=t;saveDeals();setPill(a,'完成','good');return t}
+function renderRouting(){const d=cur();AGENTS.forEach(a=>{const el=$('#agr-'+a.id);if(!el)return;const n=d.files.filter(routeFilter(a)).length;el.textContent=`可讀取共用文件 ${n} / ${d.files.length} 份（${ROUTE[a.id].join('、')}、其他）`})}
+function renderResults(){const d=cur();Object.keys(agentResults).forEach(k=>delete agentResults[k]);AGENTS.forEach(a=>{const r=(d.res||{})[a.id];if(r){agentResults[a.id]=r.text;$('#ago-'+a.id).innerHTML=md(r.text);setPill(a,r.fp===agentFp(a)?`已完成 ${r.at.slice(5)}`:'資料已變更','');if(r.fp===agentFp(a))$('#agp-'+a.id).className='pill good';else $('#agp-'+a.id).className='pill warn'}else{$('#ago-'+a.id).innerHTML='';setPill(a,'待命')}});
+  if(d.orch&&d.orch.text){orchText=d.orch.text;$('#orchCard').style.display='';$('#orchOut').innerHTML=md(d.orch.text);const m=d.orch.text.match(/評級[:：]\s*(值得深入評估|有條件評估|需要改善|不建議)/);$('#orchPill').textContent=m?m[1]:'完成';$('#orchPill').className='pill '+({'值得深入評估':'good','有條件評估':'warn','需要改善':'warn','不建議':'bad'}[m&&m[1]]||'');reportText=d.orch.report||''}else{orchText='';$('#orchCard').style.display='none';$('#orchOut').innerHTML='';reportText=''}}
 AGENTS.forEach(a=>{const inp=$('#af-'+a.id),dz=$('#agd-'+a.id);inp.onchange=e=>{agentUpload(a,e.target.files);e.target.value=''};
   ['dragenter','dragover'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over')}));dz.addEventListener('drop',e=>agentUpload(a,e.dataTransfer.files));
-  $(`[data-run="${a.id}"]`).onclick=async e=>{if(!ai)return;const b=e.target;b.disabled=true;const c=new AbortController();try{await runAgent(a,c.signal)}catch(err){$('#agp-'+a.id).textContent='未完成';$('#agp-'+a.id).className='pill bad'}b.disabled=false}});
+  $(`[data-run="${a.id}"]`).onclick=async e=>{if(!ai)return;const b=e.target;b.disabled=true;const c=new AbortController();try{await runAgent(a,c.signal,'single')}catch(err){setPill(a,'未完成','bad')}b.disabled=false}});
 let ctrl=null,reportText='';
 $('#runCommittee').onclick=async()=>{
   if(!ai)return;
   const picked=AGENTS.filter(a=>$('#pk-'+a.id).checked);if(!picked.length)return;
   ctrl=new AbortController();$('#runCommittee').disabled=true;$('#stopCommittee').disabled=false;
   const st=$('#cStatus');st.style.display='';st.dataset.k='run';
-  AGENTS.forEach(a=>{$('#agp-'+a.id).textContent=picked.includes(a)?'排隊中':'未出席';$('#agp-'+a.id).className='pill';$('#ago-'+a.id).innerHTML='';delete agentResults[a.id]});
-  const results=[];reportText='';
+  const force=$('#forceRerun').checked;const d=cur();let reused=0,ran=0;
+  AGENTS.forEach(a=>{if(!picked.includes(a))setPill(a,'未出席');else if(!force&&d.res&&d.res[a.id]&&d.res[a.id].fp===agentFp(a))setPill(a,'沿用先前結果','good');else{setPill(a,'排隊中');$('#ago-'+a.id).innerHTML=''}});
   try{
-    for(const a of picked){
-      st.textContent=`${a.name} 分析中（${results.length+1}/${picked.length}）`;
+    for(const [k,a] of picked.entries()){
+      if(!force&&d.res&&d.res[a.id]&&d.res[a.id].fp===agentFp(a)){agentResults[a.id]=d.res[a.id].text;$('#ago-'+a.id).innerHTML=md(d.res[a.id].text);reused++;continue}
+      st.textContent=`${a.name} 分析中（${k+1}/${picked.length}）`;
       $('#ag-'+a.id).scrollIntoView({block:'nearest',behavior:'smooth'});
-      const t=await runAgent(a,ctrl.signal);results.push({a,t});
+      await runAgent(a,ctrl.signal,'committee');ran++;
     }
     st.textContent='總控 Orchestrator 交叉驗證中';
-    await runOrchestrator(ctrl.signal);
-    st.textContent='委員會完成，報告如下。可按「整合成分析報告（PPT）」下載簡報。';$('#orchCard').scrollIntoView({behavior:'smooth'});
+    const o=await runOrchestrator(ctrl.signal,picked,force);
+    st.textContent=`委員會完成：新分析 ${ran} 位、沿用先前結果 ${reused} 位${o.reused?'、總控沿用先前彙整':''}。可按「整合成分析報告（PPT）」下載簡報。`;$('#orchCard').scrollIntoView({behavior:'smooth'});
   }catch(e){st.textContent='已停止或發生錯誤，可修改資料後重新召開。'}
   $('#runCommittee').disabled=false;$('#stopCommittee').disabled=true;
 };
 $('#stopCommittee').onclick=()=>ctrl&&ctrl.abort();
-let orchText='',orchStale=true;
-async function runOrchestrator(signal){
-  const done=AGENTS.filter(a=>agentResults[a.id]);if(!done.length)throw new Error('尚無任何 Agent 分析結果');
+let orchText='';
+function orchFp(list){return hash(PROMPT_VER+caseHeader(cur())+list.map(a=>a.id+':'+agentResults[a.id]).join('|'))}
+async function runOrchestrator(signal,list=null,force=false){
+  const done=(list||AGENTS).filter(a=>agentResults[a.id]);if(!done.length)throw new Error('尚無任何 Agent 分析結果');const d=cur();const fp=orchFp(done);
+  if(!force&&d.orch&&d.orch.fp===fp&&d.orch.text){renderResults();return{text:d.orch.text,reused:true}}
   $('#orchCard').style.display='';$('#orchPill').textContent='彙整中';$('#orchPill').className='pill';
   const all=done.map(a=>`【${a.name}】\n${agentResults[a.id]}`).join('\n\n');
-  const p=`${BASE}\n\n你是總控 Orchestrator，主持 AI 投資決策委員會。以下是各專家意見，請交叉驗證（指出專家間矛盾、重複或遺漏），並產出投資決策報告：\n### 決策結論（第一行寫「評級：值得深入評估／有條件評估／需要改善／不建議」之一）\n### 投資總分：X / 100（依財務健康20、市場潛力15、技術競爭力15、團隊治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10 分項列出）\n### 否決條件檢查（法律重大問題、財務造假、專利權屬、臨床安全）\n### 投資亮點\n### 關鍵風險清單\n### 估值與募資意見（含稀釋影響）\n### 退出策略\n### 下一步行動與補件清單（依優先順序）\n\n案件資料：\n${caseText()}\n\n專家意見：\n${all}`;
-  const t=await ask(p,$('#orchOut'),{signal,tier:'complex'});
+  const p=`你是總控 Orchestrator，主持 AI 投資決策委員會。以下是各專家意見，請交叉驗證（指出專家間矛盾、重複或遺漏），並產出投資決策報告：\n### 決策結論（第一行寫「評級：值得深入評估／有條件評估／需要改善／不建議」之一）\n### 投資總分：X / 100（依財務健康20、市場潛力15、技術競爭力15、團隊治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10 分項列出）\n### 否決條件檢查（法律重大問題、財務造假、專利權屬、臨床安全）\n### 投資亮點\n### 關鍵風險清單\n### 估值與募資意見（含稀釋影響）\n### 退出策略\n### 下一步行動與補件清單（依優先順序）\n\n專家意見：\n${all}`;
+  const t=await ask(p,$('#orchOut'),{signal,tier:'complex',system:BASE,context:`案件資料（文件節錄，完整內容已由各專家閱讀）：\n${caseText(ORCH_DOC_LIMIT)}`,cache:false});
   const m=t.match(/評級[:：]\s*(值得深入評估|有條件評估|需要改善|不建議)/);
   const r=m?m[1]:'完成';$('#orchPill').textContent=r;
   $('#orchPill').className='pill '+({'值得深入評估':'good','有條件評估':'warn','需要改善':'warn','不建議':'bad'}[r]||'');
-  reportText=`# ${cur().name} 投資決策報告\n\n${t}\n\n---\n${all}`;orchText=t;orchStale=false;return t}
+  reportText=`# ${d.name} 投資決策報告\n\n${t}\n\n---\n${all}`;orchText=t;d.orch={fp,text:t,report:reportText,list:done.map(a=>a.id)};delete d.rep;saveDeals();return{text:t,reused:false}}
 
 function copy(txt,btn){navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent='已複製';setTimeout(()=>btn.textContent=o,1500)}).catch(()=>{btn.textContent='瀏覽器不允許複製'})}
 $('#copyReport').onclick=e=>copy(reportText,e.target);
 
 /* module AI buttons */
 const AI_PROMPTS={
- ipo:()=>`${BASE}\n\n你是投資銀行 IPO 顧問。依案件資料評估：\n### 建議路徑（興櫃→上市／上櫃一般板／創新板，或非營利組織需先建立營利實體）與理由\n### 目前距離各路徑的主要缺口（獲利、資本額、股權分散、公司治理、內控、會計師與承銷商）\n### 上市前財務體質與股權結構改善建議\n### 建議時程（以季為單位）\n### 需要確認的最新法規條件\n\n${caseText()}`,
- bp:()=>`${BASE}\n\n你是資深創投合夥人兼募資顧問。審查以下募資計畫，逐項給 1–5 分並說明：商業模式、市場規模、技術競爭力、專利 IP、臨床證據（若適用）、財務預測、募資合理性、投資亮點、投資風險。接著提出：\n### 可加入的亮點（技術、IP、商業模式、策略合作、資本市場路徑）\n### 建議改寫的 BP 段落與一句話投資故事\n### 投資人最可能追問的 8 個問題\n\n${caseText()}`,
- ip:()=>`${BASE}\n\n你是專利師兼臨床法規顧問。使用者評估 TRL 為 ${$('#trl').value}；已完成查核：${IPCK.filter((x,i)=>ipState[i]).join('、')||'無'}；未完成：${IPCK.filter((x,i)=>!ipState[i]).join('、')}。請評估：\n### 專利組合強度與缺口（權利要求、地域、剩餘年限、營業秘密）\n### FTO 初步風險\n### 技術成熟度與競爭者比較\n### 臨床與法規路徑\n### IP 商業化與授權潛力\n### 下一步查核\n\n${caseText()}`,
- industry:()=>`${BASE}\n\n你是產業研究主管。針對「${$('#indPick').value}」產業，建立投資研究框架：\n### 次產業與價值鏈地圖\n### 需查證的關鍵數據（全球市場規模、CAGR 等，列出建議資料來源，不要自行給確切數字）\n### 國際主要競爭者類型與台灣相關企業類型\n### 技術發展趨勢\n### 未來 3–5 年投資機會\n### 產業風險與進入障礙\n### 投資人盡職調查應問的 6 個問題`
+ ipo:()=>`你是投資銀行 IPO 顧問。依案件資料評估：\n### 建議路徑（興櫃→上市／上櫃一般板／創新板，或非營利組織需先建立營利實體）與理由\n### 目前距離各路徑的主要缺口（獲利、資本額、股權分散、公司治理、內控、會計師與承銷商）\n### 上市前財務體質與股權結構改善建議\n### 建議時程（以季為單位）\n### 需要確認的最新法規條件`,
+ bp:()=>`你是資深創投合夥人兼募資顧問。審查以下募資計畫，逐項給 1–5 分並說明：商業模式、市場規模、技術競爭力、專利 IP、臨床證據（若適用）、財務預測、募資合理性、投資亮點、投資風險。接著提出：\n### 可加入的亮點（技術、IP、商業模式、策略合作、資本市場路徑）\n### 建議改寫的 BP 段落與一句話投資故事\n### 投資人最可能追問的 8 個問題`,
+ ip:()=>`你是專利師兼臨床法規顧問。使用者評估 TRL 為 ${$('#trl').value}；已完成查核：${IPCK.filter((x,i)=>ipState[i]).join('、')||'無'}；未完成：${IPCK.filter((x,i)=>!ipState[i]).join('、')}。請評估：\n### 專利組合強度與缺口（權利要求、地域、剩餘年限、營業秘密）\n### FTO 初步風險\n### 技術成熟度與競爭者比較\n### 臨床與法規路徑\n### IP 商業化與授權潛力\n### 下一步查核`,
+ industry:()=>`你是產業研究主管。針對「${$('#indPick').value}」產業，建立投資研究框架：\n### 次產業與價值鏈地圖\n### 需查證的關鍵數據（全球市場規模、CAGR 等，列出建議資料來源，不要自行給確切數字）\n### 國際主要競爭者類型與台灣相關企業類型\n### 技術發展趨勢\n### 未來 3–5 年投資機會\n### 產業風險與進入障礙\n### 投資人盡職調查應問的 6 個問題`
 };
-$$('.ai-btn').forEach(b=>b.onclick=async()=>{if(!ai)return;b.disabled=true;try{await ask(AI_PROMPTS[b.dataset.ai](),$('#ai-'+b.dataset.ai))}catch(e){}b.disabled=false});
+$$('.ai-btn').forEach(b=>b.onclick=async()=>{if(!ai)return;b.disabled=true;const k=b.dataset.ai;try{await ask(AI_PROMPTS[k](),$('#ai-'+k),{system:BASE,context:k==='industry'?'':`案件資料：\n${caseText()}`,cache:true})}catch(e){}b.disabled=false});
 
 /* ---------- IPO ---------- */
 const IPO={
@@ -772,7 +794,7 @@ function calcScore(){store.set('score',sc);store.set('veto',veto);let t=0;SC.for
 $('#resetScore').onclick=()=>{sc=SC.map(s=>s[2]);veto=[0,0,0,0];renderScoreRows()};renderScoreRows();
 
 /* ---------- deals / data center ---------- */
-const CASE_DOC_LIMIT=90000, FILE_LIMIT=60000, AGENT_DOC_LIMIT=60000;
+const CASE_DOC_LIMIT=90000, FILE_LIMIT=60000, AGENT_DOC_LIMIT=60000, ORCH_DOC_LIMIT=30000;
 const CATS=['公司基本資料','財務資料','營運資料','市場資料','技術資料','法律資料','專利資料','臨床資料','人才資料','募資資料','未來預測','退出規劃','其他'];
 const CAT_RULES=[[/財報|財務|損益|資產負債|現金流|年報|查核|簽證|financial|10-k|annual/i,'財務資料'],[/募資|計畫書|bp|pitch|deck|簡報|投資人/i,'募資資料'],[/專利|patent|智財|ip/i,'專利資料'],[/臨床|clinical|trial|試驗|tfda|fda/i,'臨床資料'],[/合約|契約|法律|訴訟|contract|nda|legal/i,'法律資料'],[/股權|股東|董監|章程|登記|簡介|profile/i,'公司基本資料'],[/市場|產業|競爭|market|industry/i,'市場資料'],[/技術|研發|規格|tech|spec|白皮書/i,'技術資料'],[/團隊|履歷|組織|team|cv|resume/i,'人才資料'],[/預測|預算|forecast|budget|projection/i,'未來預測'],[/營運|營收|客戶|訂單|銷售|月報|sales|kpi/i,'營運資料'],[/退出|併購|exit|m&a/i,'退出規劃']];
 const guessCat=n=>{for(const[r,c]of CAT_RULES)if(r.test(n))return c;return '其他'};
@@ -788,7 +810,7 @@ function cur(){return deals.find(d=>d.id===curId)||deals[0]}
 function saveDeals(){try{localStorage.setItem('aci_deals',JSON.stringify(deals));localStorage.setItem('aci_cur',curId);return true}catch(e){$('#upStatus').textContent='瀏覽器儲存空間不足：這次上傳的文件內容只會保留到關閉頁面為止。可刪除不需要的文件或案件釋出空間。';return false}}
 function finText(d){const y=d.fin.years;const has=FIN_ROWS.some(r=>d.fin.v[r[0]].some(x=>x!==null&&x!==''));if(!has)return '';return '項目\t'+y.join('\t')+'\n'+FIN_ROWS.map(r=>r[1]+'\t'+y.map((_,i)=>d.fin.v[r[0]][i]??'').join('\t')).join('\n')}
 const FIELDS=[['cName','name'],['cInd','ind'],['cStage','stage'],['cRole','role'],['cDesc','desc']];
-function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderAgentFiles();renderCmSum()}
+function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderAgentFiles();renderRouting();renderResults();renderCmSum()}
 function renderDealSel(){$('#dealSel').innerHTML=deals.map(d=>`<option value="${d.id}" ${d.id===curId?'selected':''}>${esc(d.name)}</option>`).join('')}
 function renderCmSum(){const d=cur();$('#cmSum').textContent=d.name;const chars=d.files.reduce((s,f)=>s+f.text.length,0);const an=Object.values(d.agentFiles||{}).reduce((s,x)=>s+x.length,0);$('#cmSub').textContent=`${d.ind}｜${d.stage}｜共用文件 ${d.files.length} 份（約 ${fmt(chars)} 字）｜Agent 專屬文件 ${an} 份｜財務數據 ${finText(d)?'已輸入':'未輸入'}`}
 FIELDS.forEach(([id,k])=>{const el=$('#'+id);const h=()=>{cur()[k]=el.value;saveDeals();if(k==='name')renderDealSel();renderCmSum()};el.addEventListener('input',h);el.addEventListener('change',h)});
@@ -809,7 +831,7 @@ async function ingest(list,arr,st){const files=[...list];let ok=0,fail=[];
   for(const [i,f] of files.entries()){st.textContent=`解析中（${i+1}/${files.length}）：${f.name}`;
     if(f.size>25*1024*1024){fail.push(f.name+'：檔案超過 25 MB');continue}
     try{const r=await extract(f);let text=(r.text||'').trim();const full=text.length;text=text.slice(0,FILE_LIMIT);arr.push({name:f.name,size:f.size,cat:guessCat(f.name),text,full,pages:r.pages||null,at:new Date().toISOString().slice(0,10)});ok++}catch(e){fail.push(f.name+'：'+(e.message||'解析失敗'))}}
-  const saved=saveDeals();return{ok,fail,saved}}
+  const saved=saveDeals();renderRouting();renderResults();return{ok,fail,saved}}
 async function agentUpload(a,list){if(!list||!list.length)return;const d=cur();d.agentFiles=d.agentFiles||{};const arr=d.agentFiles[a.id]=d.agentFiles[a.id]||[];const st=$('#ags-'+a.id);const {ok,fail,saved}=await ingest(list,arr,st);renderAgentFiles();renderCmSum();st.textContent=`已加入 ${ok} 份。`+(fail.length?'未成功：'+fail.join('；'):'')+(saved?'':' 儲存空間不足，重新整理後需重新上傳。')}
 function renderAgentFiles(){const d=cur();AGENTS.forEach(a=>{const arr=((d.agentFiles||{})[a.id])||[];const el=$('#afl-'+a.id);el.innerHTML=arr.length?arr.map((f,i)=>`<span class="chip">${esc(f.name)} <small>${fmt(f.full||f.text.length)} 字${(f.pages?f.text.replace(/\[第 \d+ 頁\]/g,'').trim().length<f.pages*20:!f.text.trim())?'｜讀不到文字':''}</small><button type="button" class="ghost" data-a="${a.id}" data-i="${i}" aria-label="移除 ${esc(f.name)}" style="padding:0 6px;margin-left:4px">×</button></span>`).join(''):'';el.querySelectorAll('button').forEach(b=>b.onclick=()=>{d.agentFiles[b.dataset.a].splice(+b.dataset.i,1);saveDeals();renderAgentFiles();renderCmSum()})})}
 async function handleFiles(list){const files=[...list];if(!files.length)return;const st=$('#upStatus');const d=cur();
@@ -819,8 +841,8 @@ $('#cFile').onchange=e=>{handleFiles(e.target.files);e.target.value=''};
 const drop=$('#drop');['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over')}));['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
 function renderFiles(){const d=cur();$('#upCount').textContent=`${d.files.length} 份文件`;if(!d.files.length){$('#fileTable').innerHTML='<tr><td style="color:var(--muted)">尚未上傳文件。</td></tr>';return}
   $('#fileTable').innerHTML='<tr><th>檔名</th><th>分類</th><th class="num">大小</th><th class="num">讀出字數</th><th>狀態</th><th></th></tr>'+d.files.map((f,i)=>{const scan=f.pages?f.text.replace(/\[第 \d+ 頁\]/g,'').trim().length<f.pages*20:!f.text.trim();return`<tr><td>${esc(f.name)}<div style="font-size:12px;color:var(--muted)">${f.at}${f.pages?'｜'+f.pages+' 頁':''}</div></td><td><select data-i="${i}" aria-label="分類" style="min-width:120px">${CATS.map(c=>`<option ${c===f.cat?'selected':''}>${c}</option>`).join('')}</select></td><td class="num">${fmt(f.size/1024)} KB</td><td class="num">${fmt(f.full||f.text.length)}</td><td>${scan?'<span class="pill bad">讀不到文字</span>':(f.full>f.text.length?'<span class="pill warn">過長，已截斷</span>':'<span class="pill good">已讀取</span>')}</td><td class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="ghost" data-view="${i}">預覽</button><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr><tr id="pv-${i}" style="display:none"><td colspan="6"><pre style="white-space:pre-wrap;max-height:260px;overflow:auto;font-size:12.5px;margin:0">${esc(f.text.slice(0,4000))}${f.text.length>4000?'\n…':''}</pre></td></tr>`}).join('');
-  $$('#fileTable select').forEach(e=>e.onchange=()=>{d.files[e.dataset.i].cat=e.value;saveDeals();renderCk()});
-  $$('#fileTable [data-del]').forEach(b=>b.onclick=()=>{d.files.splice(+b.dataset.del,1);saveDeals();renderFiles();renderCk();renderCmSum()});
+  $$('#fileTable select').forEach(e=>e.onchange=()=>{d.files[e.dataset.i].cat=e.value;saveDeals();renderCk();renderRouting();renderResults()});
+  $$('#fileTable [data-del]').forEach(b=>b.onclick=()=>{d.files.splice(+b.dataset.del,1);saveDeals();renderFiles();renderCk();renderCmSum();renderRouting();renderResults()});
   $$('#fileTable [data-view]').forEach(b=>b.onclick=()=>{const r=$('#pv-'+b.dataset.view);r.style.display=r.style.display==='none'?'':'none'})}
 function renderFin(){const d=cur(),F=d.fin;const yrs=F.years;const n=(k,i)=>F.v[k][i];
   const dr=[['毛利率',i=>n('gp',i)!=null&&n('rev',i)?pct(n('gp',i)/n('rev',i)):'—'],['自由現金流',i=>n('ocf',i)!=null&&n('capex',i)!=null?fmt(n('ocf',i)-n('capex',i),1):'—'],['淨負債',i=>n('debt',i)!=null&&n('cash',i)!=null?fmt(n('debt',i)-n('cash',i),1):'—']];
@@ -849,7 +871,7 @@ loadDeal();renderCk();
 /* ---------- PPT report ---------- */
 const PPT_LIB='https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js';
 function parseJSON(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');return JSON.parse(t.slice(a,b+1))}
-async function reportJSON(){const d=cur();const done=AGENTS.filter(a=>agentResults[a.id]);
+async function reportJSON(list){const d=cur();const done=list||AGENTS.filter(a=>agentResults[a.id]);
   const prompt=`將以下投資決策委員會的分析整理成簡報內容。只回傳一個 JSON 物件，不要任何其他文字。使用繁體中文（台灣用語）。每個條列 40 字以內，每個陣列最多 6 項，不得新增原文沒有的數字或事實。
 格式：{"rating":"值得深入評估|有條件評估|需要改善|不建議","score":0-100 的整數或 null,"summary":"三句以內的結論","scoreBreakdown":[{"item":"財務健康","score":數字,"max":20}，依財務健康20、市場潛力15、技術競爭力15、團隊與治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10],"veto":[{"item":"重大法律問題","status":"通過|疑慮|未知","note":"短說明"}，共四項：重大法律問題、財務造假疑慮、專利權屬、臨床安全],"highlights":[""],"risks":[{"level":"高|中|低","risk":"","mitigation":""}],"valuation":[""],"exit":[""],"nextSteps":[""],"missing":[""],"agents":[{"name":"Agent 名稱","score":"X / 10","points":["最多 3 點"]}]}
 
@@ -897,8 +919,11 @@ function buildPpt(J){const d=cur();const P=new PptxGenJS();P.layout='LAYOUT_WIDE
   return P}
 $('#mkPpt').onclick=async e=>{if(!ai)return;const b=e.target,st=$('#pptSt');st.style.display='';const done=AGENTS.filter(a=>agentResults[a.id]);if(!done.length){st.textContent='尚無任何 Agent 分析結果。請先召開委員會，或在專家卡片按「單獨分析」。';return}
   b.disabled=true;try{
-    if(orchStale||!orchText){st.textContent=`總控 Orchestrator 彙整 ${done.length} 位專家意見中…`;await runOrchestrator()}
-    st.textContent='整理簡報內容中…';const [J]=await Promise.all([reportJSON(),loadScript(PPT_LIB)]);
+    const d=cur();const list=d.orch&&d.orch.list&&d.orch.list.every(id=>agentResults[id])?AGENTS.filter(a=>d.orch.list.includes(a.id)):done;
+    if(!(d.orch&&d.orch.fp===orchFp(list))){st.textContent=`總控 Orchestrator 彙整 ${list.length} 位專家意見中…`;await runOrchestrator(null,list)}
+    const rfp=hash(PROMPT_VER+orchText+list.map(a=>agentResults[a.id]).join('|'));let J;
+    if(d.rep&&d.rep.fp===rfp){st.textContent='沿用先前整理的簡報內容…';J=d.rep.json;await loadScript(PPT_LIB)}
+    else{st.textContent='整理簡報內容中…';[J]=await Promise.all([reportJSON(list),loadScript(PPT_LIB)]);d.rep={fp:rfp,json:J};saveDeals()}
     st.textContent='產生 PowerPoint 中…';const P=buildPpt(J);const blob=await P.write({outputType:'blob'});
     const fname=`${cur().name.replace(/[\\/:*?"<>|]/g,'')}_投資決策分析報告_${new Date().toISOString().slice(0,10)}.pptx`;
     if(dl){try{await dl.save({filename:fname,data:blob});st.textContent='簡報已產出：'+fname}catch(err){st.textContent='下載未完成：'+(err?.message||'已取消')}}

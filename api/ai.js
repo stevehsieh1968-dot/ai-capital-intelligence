@@ -38,7 +38,19 @@ export async function POST(req) {
   }
   const prompt = String(body.prompt || '').slice(0, MAX_PROMPT_CHARS);
   if (!prompt) return json({ code: 'bad_request', message: '缺少 prompt' }, 400);
+  const context = String(body.context || '').slice(0, MAX_PROMPT_CHARS);
+  const system = String(body.system || '').slice(0, 20000);
+  const useCache = body.cache !== false;
   const model = process.env.ACI_MODEL || MODELS[body.tier] || MODELS.default;
+
+  // 提示快取：system 與共用案件資料（context）放在前面並標記 cache_control，
+  // 同一案件的多位專家依序呼叫時，後續請求只以快取讀取價計費。
+  const content = context
+    ? [
+        { type: 'text', text: context, ...(useCache ? { cache_control: { type: 'ephemeral' } } : {}) },
+        { type: 'text', text: prompt },
+      ]
+    : prompt;
 
   const upstream = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -51,7 +63,8 @@ export async function POST(req) {
       model,
       max_tokens: 4096,
       stream: true,
-      messages: [{ role: 'user', content: prompt }],
+      ...(system ? { system: [{ type: 'text', text: system }] } : {}),
+      messages: [{ role: 'user', content }],
     }),
     signal: req.signal,
   });
@@ -66,11 +79,14 @@ export async function POST(req) {
   const dec = new TextDecoder();
   const reader = upstream.body.getReader();
   let buf = '';
+  const usage = { model, input_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, output_tokens: 0 };
 
   const stream = new ReadableStream({
     async pull(controller) {
       const { done, value } = await reader.read();
       if (done) {
+        // 以 \u0000 分隔的結尾資料：本次用量（前端會移除，不會顯示在分析內容中）
+        controller.enqueue(enc.encode('\u0000' + JSON.stringify(usage)));
         controller.close();
         return;
       }
@@ -82,7 +98,11 @@ export async function POST(req) {
         if (!line.startsWith('data:')) continue;
         try {
           const ev = JSON.parse(line.slice(5).trim());
-          if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+          if (ev.type === 'message_start' && ev.message?.usage) {
+            Object.assign(usage, ev.message.usage, { model });
+          } else if (ev.type === 'message_delta' && ev.usage) {
+            usage.output_tokens = ev.usage.output_tokens ?? usage.output_tokens;
+          } else if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
             controller.enqueue(enc.encode(ev.delta.text));
           } else if (ev.type === 'error') {
             controller.enqueue(enc.encode('\n\n（AI 服務中斷：' + (ev.error?.message || '未知錯誤') + '）'));
