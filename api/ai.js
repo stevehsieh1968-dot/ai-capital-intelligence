@@ -11,6 +11,9 @@ const MODELS = {
 };
 const MAX_PROMPT_CHARS = 120000;
 
+// 長篇分析可能超過 1 分鐘，延長函式執行上限（秒）
+export const maxDuration = 300;
+
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), {
     status,
@@ -52,22 +55,26 @@ export async function POST(req) {
       ]
     : prompt;
 
-  const upstream = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      stream: true,
-      ...(system ? { system: [{ type: 'text', text: system }] } : {}),
-      messages: [{ role: 'user', content }],
-    }),
-    signal: req.signal,
-  });
+  let upstream;
+  try {
+    upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        stream: true,
+        ...(system ? { system: [{ type: 'text', text: system }] } : {}),
+        messages: [{ role: 'user', content }],
+      }),
+    });
+  } catch (e) {
+    return json({ code: 'upstream_error', message: '無法連線到 AI 服務：' + (e?.message || e) }, 502);
+  }
 
   if (!upstream.ok) {
     const detail = (await upstream.text()).slice(0, 300);
@@ -75,49 +82,55 @@ export async function POST(req) {
     return json({ code: rate ? 'rate_limited' : 'upstream_error', message: detail }, rate ? 429 : 502);
   }
 
-  const enc = new TextEncoder();
-  const dec = new TextDecoder();
-  const reader = upstream.body.getReader();
-  let buf = '';
   const usage = { model, input_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, output_tokens: 0 };
+  let buf = '';
+  const handleLine = (line, controller) => {
+    line = line.trim();
+    if (!line.startsWith('data:')) return;
+    let ev;
+    try {
+      ev = JSON.parse(line.slice(5).trim());
+    } catch {
+      return;
+    }
+    if (ev.type === 'message_start' && ev.message?.usage) {
+      Object.assign(usage, ev.message.usage, { model });
+    } else if (ev.type === 'message_delta' && ev.usage) {
+      usage.output_tokens = ev.usage.output_tokens ?? usage.output_tokens;
+    } else if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+      controller.enqueue(ev.delta.text);
+    } else if (ev.type === 'error') {
+      controller.enqueue('\n\n（AI 服務中斷：' + (ev.error?.message || '未知錯誤') + '）');
+    }
+  };
 
-  const stream = new ReadableStream({
-    async pull(controller) {
-      const { done, value } = await reader.read();
-      if (done) {
-        // 以 \u0000 分隔的結尾資料：本次用量（前端會移除，不會顯示在分析內容中）
-        controller.enqueue(enc.encode('\u0000' + JSON.stringify(usage)));
-        controller.close();
-        return;
-      }
-      buf += dec.decode(value, { stream: true });
+  // SSE → 純文字：以標準串流管線轉換，結尾附上以 \u0000 分隔的用量資料（前端會移除）
+  const sseToText = new TransformStream({
+    transform(chunk, controller) {
+      buf += chunk;
       let i;
       while ((i = buf.indexOf('\n')) >= 0) {
-        const line = buf.slice(0, i).trim();
+        const line = buf.slice(0, i);
         buf = buf.slice(i + 1);
-        if (!line.startsWith('data:')) continue;
-        try {
-          const ev = JSON.parse(line.slice(5).trim());
-          if (ev.type === 'message_start' && ev.message?.usage) {
-            Object.assign(usage, ev.message.usage, { model });
-          } else if (ev.type === 'message_delta' && ev.usage) {
-            usage.output_tokens = ev.usage.output_tokens ?? usage.output_tokens;
-          } else if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
-            controller.enqueue(enc.encode(ev.delta.text));
-          } else if (ev.type === 'error') {
-            controller.enqueue(enc.encode('\n\n（AI 服務中斷：' + (ev.error?.message || '未知錯誤') + '）'));
-          }
-        } catch {
-          /* 忽略非 JSON 行 */
-        }
+        handleLine(line, controller);
       }
     },
-    cancel() {
-      reader.cancel();
+    flush(controller) {
+      if (buf) handleLine(buf, controller);
+      controller.enqueue('\u0000' + JSON.stringify(usage));
     },
   });
 
+  const stream = upstream.body
+    .pipeThrough(new TextDecoderStream())
+    .pipeThrough(sseToText)
+    .pipeThrough(new TextEncoderStream());
+
   return new Response(stream, {
-    headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'no-store, no-transform',
+      'x-accel-buffering': 'no',
+    },
   });
 }
