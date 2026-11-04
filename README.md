@@ -2,6 +2,8 @@
 
 IPO × 投資 × 併購 × 企業估值智慧平台（MVP 原型）。
 
+**謝邦彥 博士 設計**
+
 - 前端：單一檔案 `index.html`（純 HTML／CSS／JavaScript，無需建置）
 - 後端：`api/ai.js`（Vercel Edge Function，串接 Anthropic Claude API）
 

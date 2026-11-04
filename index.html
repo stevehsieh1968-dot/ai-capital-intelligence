@@ -48,6 +48,8 @@ nav.side{background:var(--side);color:var(--side-text);padding:22px 14px;positio
 .brand{padding:0 8px 18px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:12px}
 .brand b{display:block;font-family:var(--display);color:#fff;font-size:18px;letter-spacing:.02em}
 .brand span{font-size:12px;color:#d6ad5c}
+.brand .credit{display:block;font-style:normal;font-size:12.5px;color:#c9d3e2;margin-top:6px;letter-spacing:.06em}
+.foot-credit{display:block;font-weight:700;color:var(--ink);margin-bottom:4px}
 .navgroup{font-size:11px;letter-spacing:.12em;color:#7f8fa6;padding:12px 10px 4px}
 nav.side a{display:flex;gap:10px;align-items:center;color:var(--side-text);text-decoration:none;padding:7px 10px;border-radius:6px;font-size:14px}
 nav.side a .n{font-family:var(--mono);font-size:11px;color:#7f8fa6;width:18px}
@@ -151,7 +153,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 <button class="menu-btn" id="menuBtn" type="button">☰ 功能選單</button>
 <div class="app">
 <nav class="side" id="side">
-  <div class="brand"><b>AI Capital Intelligence</b><span>IPO × 投資 × 併購 × 企業估值</span></div>
+  <div class="brand"><b>AI Capital Intelligence</b><span>IPO × 投資 × 併購 × 企業估值</span><em class="credit">謝邦彥 博士 設計</em></div>
   <div class="navgroup">總覽</div>
   <a href="#overview" data-v="overview"><span class="n">00</span>平台架構</a>
   <a href="#data" data-v="data"><span class="n">UP</span>案件資料・上傳</a>
@@ -555,7 +557,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
   </div>
 </section>
 
-<footer>本平台為分析輔助工具與產品原型。法律、會計及投資 Agent 的輸出不構成法律意見、會計簽證或投資建議；正式意見與證券相關受規範服務，應由合格專業人士提供。示範數字均為虛構。請勿上傳未經授權的企業機密文件。</footer>
+<footer><span class="foot-credit">AI Capital Intelligence｜謝邦彥 博士 設計</span>本平台為分析輔助工具與產品原型。法律、會計及投資 Agent 的輸出不構成法律意見、會計簽證或投資建議；正式意見與證券相關受規範服務，應由合格專業人士提供。示範數字均為虛構。請勿上傳未經授權的企業機密文件。</footer>
 </main>
 </div>
 
@@ -884,15 +886,15 @@ ${orchText}
 各專家意見：
 ${done.map(a=>`【${a.name}】\n${agentResults[a.id]}`).join('\n\n')}`;
   const r=await ai(prompt,{modelTier:'default'});return parseJSON(r.text)}
-function buildPpt(J){const d=cur();const P=new PptxGenJS();P.layout='LAYOUT_WIDE';P.title=d.name+' 投資決策分析報告';P.company='AI Capital Intelligence';
+function buildPpt(J){const d=cur();const P=new PptxGenJS();P.layout='LAYOUT_WIDE';P.title=d.name+' 投資決策分析報告';P.company='AI Capital Intelligence';P.author='謝邦彥 博士';
   const F='Microsoft JhengHei',NAVY='13243D',BRASS='A77D2C',MUTED='5D6A7D',LINE='D9DEE6',SOFT='F3EAD7';const RC={'值得深入評估':'1F7A4D','有條件評估':'B26B00','需要改善':'B26B00','不建議':'B3261E'};const LC={'高':'B3261E','中':'B26B00','低':'1F7A4D'};
   const date=new Date().toLocaleDateString('zh-TW');let n=0;
-  const base=(title,eyebrow)=>{const s=P.addSlide();s.background={color:'FFFFFF'};n++;s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:0.12,fill:{color:NAVY}});if(eyebrow)s.addText(eyebrow,{x:0.6,y:0.35,w:9,h:0.3,fontFace:F,fontSize:11,color:BRASS,bold:true,charSpacing:2});s.addText(title,{x:0.6,y:0.62,w:12,h:0.7,fontFace:F,fontSize:26,bold:true,color:NAVY});s.addShape(P.ShapeType.line,{x:0.6,y:1.38,w:12.1,h:0,line:{color:LINE,width:1}});s.addText(`${d.name}｜AI Capital Intelligence`,{x:0.6,y:7.0,w:9,h:0.3,fontFace:F,fontSize:9,color:MUTED});s.addText(String(n),{x:12.2,y:7.0,w:0.5,h:0.3,fontFace:F,fontSize:9,color:MUTED,align:'right'});return s};
+  const base=(title,eyebrow)=>{const s=P.addSlide();s.background={color:'FFFFFF'};n++;s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:0.12,fill:{color:NAVY}});if(eyebrow)s.addText(eyebrow,{x:0.6,y:0.35,w:9,h:0.3,fontFace:F,fontSize:11,color:BRASS,bold:true,charSpacing:2});s.addText(title,{x:0.6,y:0.62,w:12,h:0.7,fontFace:F,fontSize:26,bold:true,color:NAVY});s.addShape(P.ShapeType.line,{x:0.6,y:1.38,w:12.1,h:0,line:{color:LINE,width:1}});s.addText(`${d.name}｜AI Capital Intelligence｜謝邦彥 博士 設計`,{x:0.6,y:7.0,w:9,h:0.3,fontFace:F,fontSize:9,color:MUTED});s.addText(String(n),{x:12.2,y:7.0,w:0.5,h:0.3,fontFace:F,fontSize:9,color:MUTED,align:'right'});return s};
   const bullets=(s,arr,o={})=>{const a=(arr||[]).filter(Boolean);if(!a.length){s.addText('（無資料）',{x:o.x??0.6,y:o.y??1.6,w:o.w??12.1,h:0.5,fontFace:F,fontSize:14,color:MUTED});return}s.addText(a.map(t=>({text:String(t),options:{bullet:{code:'25A0'},paraSpaceAfter:8}})),{x:o.x??0.6,y:o.y??1.6,w:o.w??12.1,h:o.h??5.2,fontFace:F,fontSize:o.fs??17,color:'18212E',valign:'top',fit:'shrink'})};
   // 1 cover
   {const s=P.addSlide();n++;s.background={color:NAVY};s.addText('AI 投資決策委員會分析報告',{x:0.8,y:1.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'D6AD5C',bold:true,charSpacing:3});s.addText(d.name,{x:0.8,y:2.2,w:11.7,h:1.3,fontFace:F,fontSize:38,bold:true,color:'FFFFFF',fit:'shrink'});s.addText(`${d.ind}｜${d.stage}`,{x:0.8,y:3.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'C9D3E2'});
     if(J.rating)s.addText(`評級：${J.rating}`+(J.score!=null?`　投資總分：${J.score} / 100`:''),{x:0.8,y:4.5,w:7.5,h:0.6,fontFace:F,fontSize:18,bold:true,color:'FFFFFF',fill:{color:RC[J.rating]||BRASS},margin:0.15});
-    s.addText(`報告日期：${date}　委託人角色：${d.role}`,{x:0.8,y:6.4,w:11.5,h:0.4,fontFace:F,fontSize:12,color:'9FB0C7'})}
+    s.addText(`報告日期：${date}　委託人角色：${d.role}`,{x:0.8,y:6.4,w:11.5,h:0.4,fontFace:F,fontSize:12,color:'9FB0C7'});s.addText('AI Capital Intelligence｜謝邦彥 博士 設計',{x:0.8,y:6.8,w:11.5,h:0.4,fontFace:F,fontSize:12,color:'D6AD5C',bold:true})}
   // 2 conclusion
   {const s=base('決策結論','EXECUTIVE SUMMARY');s.addText(J.rating||'—',{x:0.6,y:1.7,w:4,h:0.9,fontFace:F,fontSize:30,bold:true,color:RC[J.rating]||NAVY});s.addText(J.score!=null?`${J.score}`:'—',{x:0.6,y:2.6,w:2.4,h:1.3,fontFace:'Arial',fontSize:66,bold:true,color:NAVY});s.addText('/ 100　投資總分',{x:2.7,y:3.15,w:2.6,h:0.5,fontFace:F,fontSize:14,color:MUTED});
     s.addText(J.summary||'',{x:5.4,y:1.7,w:7.3,h:2.3,fontFace:F,fontSize:16,color:'18212E',valign:'top',fit:'shrink'});
