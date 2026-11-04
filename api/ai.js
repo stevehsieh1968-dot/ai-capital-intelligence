@@ -1,10 +1,8 @@
-// Vercel Edge Function：把網頁的 AI 請求轉給 Anthropic Claude API，並以純文字串流回傳。
+// Vercel Function（Web 標準 Request/Response，Node.js 執行環境）：把網頁的 AI 請求轉給 Anthropic Claude API，並以純文字串流回傳。
 // 環境變數（在 Vercel → Project → Settings → Environment Variables 設定）：
 //   ANTHROPIC_API_KEY  必填，你的 Anthropic API Key
 //   ACI_ACCESS_CODE    建議設定，網站使用者需輸入此存取碼才能使用 AI（避免額度被陌生人用掉）
 //   ACI_MODEL          選填，覆寫所有請求使用的模型
-
-export const config = { runtime: 'edge' };
 
 const MODELS = {
   quick: 'claude-haiku-5-5',
@@ -19,12 +17,14 @@ const json = (obj, status = 200) =>
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
 
-export default async function handler(req) {
+export function GET() {
+  return json({ ok: Boolean(process.env.ANTHROPIC_API_KEY), needsCode: Boolean(process.env.ACI_ACCESS_CODE) });
+}
+
+export async function POST(req) {
   const key = process.env.ANTHROPIC_API_KEY;
   const accessCode = process.env.ACI_ACCESS_CODE;
 
-  if (req.method === 'GET') return json({ ok: Boolean(key), needsCode: Boolean(accessCode) });
-  if (req.method !== 'POST') return json({ code: 'method_not_allowed' }, 405);
   if (!key) return json({ code: 'no_key', message: '伺服器尚未設定 ANTHROPIC_API_KEY' }, 500);
   if (accessCode && req.headers.get('x-access-code') !== accessCode) {
     return json({ code: 'bad_code', message: '存取碼錯誤' }, 401);
