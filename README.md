@@ -33,6 +33,15 @@ IPO × 投資 × 併購 × 企業估值智慧平台（MVP 原型）。
 4. 到 **Deployments** 對最新部署按 **Redeploy**，讓環境變數生效。
 5. 打開網站，在「投資決策委員會」頁輸入存取碼即可使用 AI 功能。
 
+## 自訂網域：capital.e-wisdom.com.tw
+
+1. Vercel 專案 → **Settings → Domains** → 輸入 `capital.e-wisdom.com.tw` → **Add**。
+2. 到 e-wisdom.com.tw 的 DNS 管理處新增一筆記錄：
+   - 類型 `CNAME`，主機名稱 `capital`，值填 Vercel 畫面顯示的目標（例如 `cname.vercel-dns.com` 或專案專屬的 `xxxx.vercel-dns-0xx.com`），TTL 預設即可。
+3. 等 DNS 生效（數分鐘至數小時），Vercel 會自動簽發 HTTPS 憑證。
+
+官網 `www.e-wisdom.com.tw` 不受影響。
+
 之後只要推送到 `main` 分支，Vercel 會自動重新部署。
 
 ## 本機預覽
