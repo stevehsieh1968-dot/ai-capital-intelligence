@@ -132,7 +132,9 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed var(--line);border-radius:10px;padding:26px 16px;text-align:center;cursor:pointer;background:var(--paper);margin-top:10px}
 .drop b{color:var(--ink);font-size:15px}.drop span{font-size:13px;color:var(--muted)}
 .drop:hover,.drop.over{border-color:var(--brass);background:var(--brass-soft)}
-.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.drop{position:relative}.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.agdrop{padding:12px;margin-top:2px}.agdrop b{font-size:13.5px}.agdrop span{font-size:12px}
+.agfiles{display:flex;flex-wrap:wrap;gap:6px}.agfiles:empty{display:none}.agfiles .chip{display:inline-flex;align-items:center;gap:4px}.agfiles .chip small{display:inline}.agst{font-size:12.5px;color:var(--muted)}
 #finTable input{width:92px;text-align:right}
 .menu-btn{display:none}
 @media (max-width:860px){
@@ -262,9 +264,10 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 <section class="view" id="v-committee">
   <div class="eyebrow">AI 投資決策委員會</div>
   <h1>召開投資決策委員會</h1>
-  <p class="lede">先在「案件資料中心」上傳文件、輸入財務數字，再選擇要出席的專家 Agent。每位專家依自己的專業出具意見，最後由總控 Agent 交叉驗證並給出評級。</p>
+  <p class="lede">先在「案件資料中心」上傳共用文件與財務數字。每位專家也可以上傳自己的專屬文件，並單獨執行分析。每位專家依自己的專業出具意見，最後由總控 Agent 交叉驗證並給出評級。</p>
   <div class="card">
     <div class="row" style="justify-content:space-between"><div><div class="navgroup" style="padding-left:0;color:var(--muted)">目前案件</div><h3 id="cmSum"></h3><p id="cmSub"></p></div><a href="#data"><button type="button" class="ghost">編輯案件資料與上傳文件</button></a></div>
+    <label for="cmFile" class="drop" id="cmDrop" style="margin-top:12px"><b>上傳文件並立即召開全體委員會</b><span>文件加入案件的共用文件，所有勾選的專家 Agent 都會讀取並依序分析</span><input type="file" id="cmFile" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json"></label>
     <div class="row" id="codeRow" style="margin-top:10px;display:none"><label for="accessCode" style="flex-direction:row;align-items:center;gap:8px">AI 存取碼<input id="accessCode" type="password" autocomplete="off" style="width:200px"></label><span style="font-size:13px;color:var(--muted)">由網站管理者提供</span></div>
     <div style="margin-top:12px"><div class="navgroup" style="padding-left:0;color:var(--muted)">出席的專家 Agent</div><div class="chips" id="agentPick"></div></div>
     <div class="row" style="margin-top:14px">
@@ -279,6 +282,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
     <div class="out md" id="orchOut" style="margin-top:8px"></div>
     <div class="row" style="margin-top:10px"><button type="button" class="ghost" id="copyReport">複製完整報告</button></div>
   </div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><div><h3>整合分析報告（PowerPoint）</h3><p>彙整所有已完成的 Agent 分析（全體召開或單獨分析皆可）。若總控尚未彙整最新結果，會先自動執行，再產出 .pptx 簡報。</p></div><button type="button" id="mkPpt" class="ai-gen" disabled>整合成分析報告（PPT）</button></div><p class="note" id="pptSt" style="margin-top:10px;display:none"></p></div>
 </section>
 
 <!-- ============ IPO ============ -->
@@ -568,13 +572,14 @@ addEventListener('hashchange',route);route();
 $('#menuBtn').onclick=()=>$('#side').classList.toggle('open');
 
 /* ---------- AI ---------- */
-let ai=null;
-function disableAI(msg){$$('.ai-btn,#runCommittee,#finAI').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
-function enableAI(){$$('.ai-btn,#runCommittee,#finAI').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
+let ai=null,dl=null;
+function disableAI(msg){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
+function enableAI(){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
 function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{localStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let text='';for(;;){const{done,value}=await rd.read();if(done)break;text+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text})}return{text}})()}
 (async()=>{
   let s=null;
   if(window.claude&&claude.use){try{s=await claude.use('sample')}catch(e){s=null}}
+  try{if(window.claude&&claude.use)claude.use('downloads').then(x=>{dl=x}).catch(()=>{})}catch(e){}
   if(s){ai=(p,o)=>s(p,o);return}
   try{const r=await fetch('/api/ai',{method:'GET'});const j=await r.json();
     if(j.ok){ai=serverAI;if(j.needsCode){$('#codeRow').style.display='';try{$('#accessCode').value=localStorage.getItem('aci_code')||''}catch(e){}}enableAI();return}
@@ -582,53 +587,66 @@ function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localSto
   disableAI('此檢視無法呼叫 AI。');
 })();
 function md(t){const lines=String(t).split('\n');let h='',inList=false;for(let l of lines){const s=esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');if(/^\s*[-*•]\s+/.test(l)||/^\s*\d+[.)、]\s+/.test(l)){if(!inList){h+='<ul>';inList=true}h+='<li>'+s.replace(/^\s*([-*•]|\d+[.)、])\s+/,'')+'</li>';continue}if(inList){h+='</ul>';inList=false}if(/^#{1,4}\s/.test(l))h+='<h4>'+s.replace(/^#+\s/,'')+'</h4>';else if(s.trim()==='---'){}else if(s.trim())h+='<p>'+s+'</p>'}if(inList)h+='</ul>';return h}
-function caseText(){const d=cur();let t=`公司／專案：${d.name}\n產業：${d.ind}\n資本市場階段：${d.stage}\n委託人角色：${d.role}\n\n公司說明：\n${d.desc}`;const ft=finText(d);if(ft)t+=`\n\n財務數據（新台幣百萬元）：\n${ft}`;let budget=CASE_DOC_LIMIT;const docs=d.files.map(f=>{const take=f.text.slice(0,Math.max(0,budget));budget-=take.length;return take?`【文件：${f.name}｜${f.cat}${take.length<f.text.length?'｜已截斷':''}】\n${take}`:''}).filter(Boolean);if(docs.length)t+=`\n\n上傳文件內容：\n${docs.join('\n\n')}`;return t}
+function caseText(limit=CASE_DOC_LIMIT){const d=cur();let t=`公司／專案：${d.name}\n產業：${d.ind}\n資本市場階段：${d.stage}\n委託人角色：${d.role}\n\n公司說明：\n${d.desc}`;const ft=finText(d);if(ft)t+=`\n\n財務數據（新台幣百萬元）：\n${ft}`;let budget=limit;const docs=d.files.map(f=>{const take=f.text.slice(0,Math.max(0,budget));budget-=take.length;return take?`【文件：${f.name}｜${f.cat}${take.length<f.text.length?'｜已截斷':''}】\n${take}`:''}).filter(Boolean);if(docs.length)t+=`\n\n上傳文件內容：\n${docs.join('\n\n')}`;return t}
 const BASE='你是台灣「AI Capital Intelligence」投資決策平台中的專家。以繁體中文（台灣用語）回答，使用 Markdown 標題與條列，精簡具體，引用案件中的數字。資料不足時明確列出「尚缺資料」，不得捏造數據或案例；涉及法規門檻時註明需以主管機關最新規定為準。你的意見屬分析輔助，不構成正式法律、會計或投資意見。';
 async function ask(prompt,out,opts={}){out.innerHTML='<p style="color:var(--muted)">分析中…</p>';try{const r=await ai(prompt,{modelTier:opts.tier||'default',signal:opts.signal,onText:({text})=>{out.innerHTML=md(text)}});out.innerHTML=md(r.text);return r.text}catch(e){if(e&&e.name==='AbortError'||e?.code==='aborted'){out.innerHTML+='<p class="note">已停止。</p>';throw e}out.innerHTML='<p class="note">無法完成：'+esc(e?.code==='rate_limited'?'使用次數暫時達上限，請稍後再試。':e?.code==='not_granted'?'尚未允許此頁使用 Claude。':e?.code==='bad_code'?'存取碼錯誤，請在「投資決策委員會」頁輸入正確存取碼。':e?.code==='no_key'?'伺服器尚未設定 API Key。':(e?.message||'未知錯誤'))+'</p>';throw e}}
 
 /* ---------- agents ---------- */
 const AGENTS=[
- {id:'law',name:'法律與合規 Agent',brain:'律師大腦',focus:'公司法、證券法、股權架構、投資合約條款、併購法律風險、訴訟與權利瑕疵、非營利轉營利的法律架構'},
- {id:'acct',name:'財務與會計 Agent',brain:'會計師大腦',focus:'財報品質、營收認列、毛利、EBITDA、自由現金流、Burn Rate 與 Cash Runway、稅務、內控、財務盡職調查'},
- {id:'ib',name:'投資銀行 Agent',brain:'投資銀行大腦',focus:'募資金額與估值合理性、Pre/Post-money、股權稀釋、IPO 路徑（興櫃、上市、上櫃、創新板）、承銷與資本結構'},
- {id:'vc',name:'創投與投資 Agent',brain:'創投大腦',focus:'商業模式可擴展性、單位經濟、投資報酬倍數、退出機制（IPO、併購、股權轉讓）、投資條件書重點'},
- {id:'ind',name:'產業研究 Agent',brain:'產業專家大腦',focus:'市場規模 TAM/SAM/SOM、成長率、國際與台灣競爭者、技術趨勢、進入障礙'},
- {id:'ipc',name:'專利與臨床 Agent',brain:'專利與技術大腦',focus:'專利有效性與權利範圍、專利家族與剩餘年限、FTO、營業秘密、TRL、臨床階段與法規路徑（TFDA、FDA）'},
- {id:'ma',name:'策略與併購 Agent',brain:'策略顧問大腦',focus:'策略合作夥伴、產業整合、併購綜效、潛在買方、商業模式升級方向'}
+ {id:'law',docs:'公司章程、股東協議、投資合約、重大合約、訴訟資料',name:'法律與合規 Agent',brain:'律師大腦',focus:'公司法、證券法、股權架構、投資合約條款、併購法律風險、訴訟與權利瑕疵、非營利轉營利的法律架構'},
+ {id:'acct',docs:'財報、會計師查核報告、月報、稅務申報、內控文件',name:'財務與會計 Agent',brain:'會計師大腦',focus:'財報品質、營收認列、毛利、EBITDA、自由現金流、Burn Rate 與 Cash Runway、稅務、內控、財務盡職調查'},
+ {id:'ib',docs:'股權結構表、歷次增資紀錄、承銷商或輔導資料',name:'投資銀行 Agent',brain:'投資銀行大腦',focus:'募資金額與估值合理性、Pre/Post-money、股權稀釋、IPO 路徑（興櫃、上市、上櫃、創新板）、承銷與資本結構'},
+ {id:'vc',docs:'募資計畫書、投資條件書、Cap Table、客戶數據',name:'創投與投資 Agent',brain:'創投大腦',focus:'商業模式可擴展性、單位經濟、投資報酬倍數、退出機制（IPO、併購、股權轉讓）、投資條件書重點'},
+ {id:'ind',docs:'市場研究報告、競爭者資料、產業統計',name:'產業研究 Agent',brain:'產業專家大腦',focus:'市場規模 TAM/SAM/SOM、成長率、國際與台灣競爭者、技術趨勢、進入障礙'},
+ {id:'ipc',docs:'專利證書與清單、FTO 報告、臨床試驗報告、法規文件',name:'專利與臨床 Agent',brain:'專利與技術大腦',focus:'專利有效性與權利範圍、專利家族與剩餘年限、FTO、營業秘密、TRL、臨床階段與法規路徑（TFDA、FDA）'},
+ {id:'ma',docs:'合作備忘錄、策略計畫、潛在併購標的資料',name:'策略與併購 Agent',brain:'策略顧問大腦',focus:'策略合作夥伴、產業整合、併購綜效、潛在買方、商業模式升級方向'}
 ];
 $('#agentChips').innerHTML=AGENTS.map(a=>`<span class="chip">${a.name}<small>${a.brain}</small></span>`).join('');
 $('#agentPick').innerHTML=AGENTS.map(a=>`<label class="chk chip" for="pk-${a.id}"><input type="checkbox" id="pk-${a.id}" checked> ${a.name}</label>`).join('');
-$('#agentCards').innerHTML=AGENTS.map(a=>`<div class="card agent" id="ag-${a.id}"><div class="hd"><h3>${a.name}</h3><span class="pill" id="agp-${a.id}">待命</span></div><p>${a.focus}</p><div class="out md" id="ago-${a.id}"></div></div>`).join('');
+$('#agentCards').innerHTML=AGENTS.map(a=>`<div class="card agent" id="ag-${a.id}"><div class="hd"><h3>${a.name}</h3><span class="pill" id="agp-${a.id}">待命</span></div><p>${a.focus}</p>
+<label for="af-${a.id}" class="drop agdrop" id="agd-${a.id}"><b>上傳此 Agent 專屬文件</b><span>建議：${a.docs}</span><input type="file" id="af-${a.id}" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json"></label>
+<div class="agfiles" id="afl-${a.id}"></div><div class="row"><button type="button" class="ghost ag-run" data-run="${a.id}" disabled>單獨分析</button><span class="agst" id="ags-${a.id}"></span></div>
+<div class="out md" id="ago-${a.id}"></div></div>`).join('');
+function agentPrompt(a){const d=cur();const own=((d.agentFiles||{})[a.id])||[];let budget=AGENT_DOC_LIMIT;const docs=own.map(f=>{const t=f.text.slice(0,Math.max(0,budget));budget-=t.length;return t?`【專屬文件：${f.name}${t.length<f.text.length?'｜已截斷':''}】\n${t}`:''}).filter(Boolean);
+  return `${BASE}\n\n你的角色：${a.name}（${a.brain}）。專業範圍：${a.focus}。\n請只從你的專業出具意見${docs.length?'，並優先依據提供給你的專屬文件（引用時註明文件名稱）':''}，結構如下：\n### 關鍵發現（3–5 點）\n### 主要風險（標示 高／中／低）\n### 尚缺資料\n### 改善與加值建議\n### 本面向評分：X / 10（一句理由）\n全文約 350 字內。\n\n案件資料：\n${caseText(Math.max(20000,CASE_DOC_LIMIT-(AGENT_DOC_LIMIT-budget)))}${docs.length?'\n\n提供給你的專屬文件：\n'+docs.join('\n\n'):''}`}
+const agentResults={};
+async function runAgent(a,signal){$('#agp-'+a.id).textContent='分析中';$('#agp-'+a.id).className='pill';const t=await ask(agentPrompt(a),$('#ago-'+a.id),{signal});agentResults[a.id]=t;orchStale=true;$('#agp-'+a.id).textContent='完成';$('#agp-'+a.id).className='pill good';return t}
+AGENTS.forEach(a=>{const inp=$('#af-'+a.id),dz=$('#agd-'+a.id);inp.onchange=e=>{agentUpload(a,e.target.files);e.target.value=''};
+  ['dragenter','dragover'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over')}));dz.addEventListener('drop',e=>agentUpload(a,e.dataTransfer.files));
+  $(`[data-run="${a.id}"]`).onclick=async e=>{if(!ai)return;const b=e.target;b.disabled=true;const c=new AbortController();try{await runAgent(a,c.signal)}catch(err){$('#agp-'+a.id).textContent='未完成';$('#agp-'+a.id).className='pill bad'}b.disabled=false}});
 let ctrl=null,reportText='';
 $('#runCommittee').onclick=async()=>{
   if(!ai)return;
   const picked=AGENTS.filter(a=>$('#pk-'+a.id).checked);if(!picked.length)return;
   ctrl=new AbortController();$('#runCommittee').disabled=true;$('#stopCommittee').disabled=false;
   const st=$('#cStatus');st.style.display='';st.dataset.k='run';
-  AGENTS.forEach(a=>{$('#agp-'+a.id).textContent=picked.includes(a)?'排隊中':'未出席';$('#agp-'+a.id).className='pill';$('#ago-'+a.id).innerHTML=''});
+  AGENTS.forEach(a=>{$('#agp-'+a.id).textContent=picked.includes(a)?'排隊中':'未出席';$('#agp-'+a.id).className='pill';$('#ago-'+a.id).innerHTML='';delete agentResults[a.id]});
   const results=[];reportText='';
   try{
     for(const a of picked){
       st.textContent=`${a.name} 分析中（${results.length+1}/${picked.length}）`;
-      $('#agp-'+a.id).textContent='分析中';$('#ag-'+a.id).scrollIntoView({block:'nearest',behavior:'smooth'});
-      const p=`${BASE}\n\n你的角色：${a.name}（${a.brain}）。專業範圍：${a.focus}。\n請只從你的專業出具意見，結構如下：\n### 關鍵發現（3–5 點）\n### 主要風險（標示 高／中／低）\n### 尚缺資料\n### 改善與加值建議\n### 本面向評分：X / 10（一句理由）\n全文約 350 字內。\n\n案件資料：\n${caseText()}`;
-      const t=await ask(p,$('#ago-'+a.id),{signal:ctrl.signal});
-      results.push({a,t});$('#agp-'+a.id).textContent='完成';$('#agp-'+a.id).className='pill good';
+      $('#ag-'+a.id).scrollIntoView({block:'nearest',behavior:'smooth'});
+      const t=await runAgent(a,ctrl.signal);results.push({a,t});
     }
     st.textContent='總控 Orchestrator 交叉驗證中';
-    $('#orchCard').style.display='';$('#orchPill').textContent='彙整中';$('#orchPill').className='pill';
-    const all=results.map(r=>`【${r.a.name}】\n${r.t}`).join('\n\n');
-    const p=`${BASE}\n\n你是總控 Orchestrator，主持 AI 投資決策委員會。以下是各專家意見，請交叉驗證（指出專家間矛盾、重複或遺漏），並產出投資決策報告：\n### 決策結論（第一行寫「評級：值得深入評估／有條件評估／需要改善／不建議」之一）\n### 投資總分：X / 100（依財務健康20、市場潛力15、技術競爭力15、團隊治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10 分項列出）\n### 否決條件檢查（法律重大問題、財務造假、專利權屬、臨床安全）\n### 投資亮點\n### 關鍵風險清單\n### 估值與募資意見（含稀釋影響）\n### 退出策略\n### 下一步行動與補件清單（依優先順序）\n\n案件資料：\n${caseText()}\n\n專家意見：\n${all}`;
-    const t=await ask(p,$('#orchOut'),{signal:ctrl.signal,tier:'complex'});
-    const m=t.match(/評級[:：]\s*(值得深入評估|有條件評估|需要改善|不建議)/);
-    const r=m?m[1]:'完成';$('#orchPill').textContent=r;
-    $('#orchPill').className='pill '+({'值得深入評估':'good','有條件評估':'warn','需要改善':'warn','不建議':'bad'}[r]||'');
-    reportText=`# ${cur().name} 投資決策報告\n\n${t}\n\n---\n${all}`;
-    st.textContent='委員會完成，報告如下。';$('#orchCard').scrollIntoView({behavior:'smooth'});
+    await runOrchestrator(ctrl.signal);
+    st.textContent='委員會完成，報告如下。可按「整合成分析報告（PPT）」下載簡報。';$('#orchCard').scrollIntoView({behavior:'smooth'});
   }catch(e){st.textContent='已停止或發生錯誤，可修改資料後重新召開。'}
   $('#runCommittee').disabled=false;$('#stopCommittee').disabled=true;
 };
 $('#stopCommittee').onclick=()=>ctrl&&ctrl.abort();
+let orchText='',orchStale=true;
+async function runOrchestrator(signal){
+  const done=AGENTS.filter(a=>agentResults[a.id]);if(!done.length)throw new Error('尚無任何 Agent 分析結果');
+  $('#orchCard').style.display='';$('#orchPill').textContent='彙整中';$('#orchPill').className='pill';
+  const all=done.map(a=>`【${a.name}】\n${agentResults[a.id]}`).join('\n\n');
+  const p=`${BASE}\n\n你是總控 Orchestrator，主持 AI 投資決策委員會。以下是各專家意見，請交叉驗證（指出專家間矛盾、重複或遺漏），並產出投資決策報告：\n### 決策結論（第一行寫「評級：值得深入評估／有條件評估／需要改善／不建議」之一）\n### 投資總分：X / 100（依財務健康20、市場潛力15、技術競爭力15、團隊治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10 分項列出）\n### 否決條件檢查（法律重大問題、財務造假、專利權屬、臨床安全）\n### 投資亮點\n### 關鍵風險清單\n### 估值與募資意見（含稀釋影響）\n### 退出策略\n### 下一步行動與補件清單（依優先順序）\n\n案件資料：\n${caseText()}\n\n專家意見：\n${all}`;
+  const t=await ask(p,$('#orchOut'),{signal,tier:'complex'});
+  const m=t.match(/評級[:：]\s*(值得深入評估|有條件評估|需要改善|不建議)/);
+  const r=m?m[1]:'完成';$('#orchPill').textContent=r;
+  $('#orchPill').className='pill '+({'值得深入評估':'good','有條件評估':'warn','需要改善':'warn','不建議':'bad'}[r]||'');
+  reportText=`# ${cur().name} 投資決策報告\n\n${t}\n\n---\n${all}`;orchText=t;orchStale=false;return t}
+
 function copy(txt,btn){navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent='已複製';setTimeout(()=>btn.textContent=o,1500)}).catch(()=>{btn.textContent='瀏覽器不允許複製'})}
 $('#copyReport').onclick=e=>copy(reportText,e.target);
 
@@ -754,13 +772,13 @@ function calcScore(){store.set('score',sc);store.set('veto',veto);let t=0;SC.for
 $('#resetScore').onclick=()=>{sc=SC.map(s=>s[2]);veto=[0,0,0,0];renderScoreRows()};renderScoreRows();
 
 /* ---------- deals / data center ---------- */
-const CASE_DOC_LIMIT=90000, FILE_LIMIT=60000;
+const CASE_DOC_LIMIT=90000, FILE_LIMIT=60000, AGENT_DOC_LIMIT=60000;
 const CATS=['公司基本資料','財務資料','營運資料','市場資料','技術資料','法律資料','專利資料','臨床資料','人才資料','募資資料','未來預測','退出規劃','其他'];
 const CAT_RULES=[[/財報|財務|損益|資產負債|現金流|年報|查核|簽證|financial|10-k|annual/i,'財務資料'],[/募資|計畫書|bp|pitch|deck|簡報|投資人/i,'募資資料'],[/專利|patent|智財|ip/i,'專利資料'],[/臨床|clinical|trial|試驗|tfda|fda/i,'臨床資料'],[/合約|契約|法律|訴訟|contract|nda|legal/i,'法律資料'],[/股權|股東|董監|章程|登記|簡介|profile/i,'公司基本資料'],[/市場|產業|競爭|market|industry/i,'市場資料'],[/技術|研發|規格|tech|spec|白皮書/i,'技術資料'],[/團隊|履歷|組織|team|cv|resume/i,'人才資料'],[/預測|預算|forecast|budget|projection/i,'未來預測'],[/營運|營收|客戶|訂單|銷售|月報|sales|kpi/i,'營運資料'],[/退出|併購|exit|m&a/i,'退出規劃']];
 const guessCat=n=>{for(const[r,c]of CAT_RULES)if(r.test(n))return c;return '其他'};
 const FIN_ROWS=[['rev','營收'],['gp','毛利'],['op','營業利益'],['ni','稅後淨利'],['ebitda','EBITDA'],['ocf','營業現金流'],['capex','資本支出'],['cash','期末現金'],['debt','有息負債']];
 const emptyFin=()=>({years:['2023','2024','2025'],v:Object.fromEntries(FIN_ROWS.map(r=>[r[0],[null,null,null]]))});
-const newDeal=(o={})=>Object.assign({id:'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:'新投資案件',ind:'AI 醫療',stage:'未公開發行／新創',role:'投資人：評估是否投資',desc:'',files:[],fin:emptyFin()},o);
+const newDeal=(o={})=>Object.assign({id:'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:'新投資案件',ind:'AI 醫療',stage:'未公開發行／新創',role:'投資人：評估是否投資',desc:'',files:[],agentFiles:{},fin:emptyFin()},o);
 const DEMO_DESC=$('#cDesc').value;
 var deals=null,curId=null;
 try{deals=JSON.parse(localStorage.getItem('aci_deals')||'null');curId=localStorage.getItem('aci_cur')}catch(e){}
@@ -770,9 +788,9 @@ function cur(){return deals.find(d=>d.id===curId)||deals[0]}
 function saveDeals(){try{localStorage.setItem('aci_deals',JSON.stringify(deals));localStorage.setItem('aci_cur',curId);return true}catch(e){$('#upStatus').textContent='瀏覽器儲存空間不足：這次上傳的文件內容只會保留到關閉頁面為止。可刪除不需要的文件或案件釋出空間。';return false}}
 function finText(d){const y=d.fin.years;const has=FIN_ROWS.some(r=>d.fin.v[r[0]].some(x=>x!==null&&x!==''));if(!has)return '';return '項目\t'+y.join('\t')+'\n'+FIN_ROWS.map(r=>r[1]+'\t'+y.map((_,i)=>d.fin.v[r[0]][i]??'').join('\t')).join('\n')}
 const FIELDS=[['cName','name'],['cInd','ind'],['cStage','stage'],['cRole','role'],['cDesc','desc']];
-function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderCmSum()}
+function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderAgentFiles();renderCmSum()}
 function renderDealSel(){$('#dealSel').innerHTML=deals.map(d=>`<option value="${d.id}" ${d.id===curId?'selected':''}>${esc(d.name)}</option>`).join('')}
-function renderCmSum(){const d=cur();$('#cmSum').textContent=d.name;const chars=d.files.reduce((s,f)=>s+f.text.length,0);$('#cmSub').textContent=`${d.ind}｜${d.stage}｜文件 ${d.files.length} 份（約 ${fmt(chars)} 字）｜財務數據 ${finText(d)?'已輸入':'未輸入'}`}
+function renderCmSum(){const d=cur();$('#cmSum').textContent=d.name;const chars=d.files.reduce((s,f)=>s+f.text.length,0);const an=Object.values(d.agentFiles||{}).reduce((s,x)=>s+x.length,0);$('#cmSub').textContent=`${d.ind}｜${d.stage}｜共用文件 ${d.files.length} 份（約 ${fmt(chars)} 字）｜Agent 專屬文件 ${an} 份｜財務數據 ${finText(d)?'已輸入':'未輸入'}`}
 FIELDS.forEach(([id,k])=>{const el=$('#'+id);const h=()=>{cur()[k]=el.value;saveDeals();if(k==='name')renderDealSel();renderCmSum()};el.addEventListener('input',h);el.addEventListener('change',h)});
 $('#dealSel').onchange=e=>{curId=e.target.value;saveDeals();loadDeal();renderCk()};
 $('#dealNew').onclick=()=>{const d=newDeal();deals.push(d);curId=d.id;saveDeals();loadDeal();renderCk();$('#cName').focus();$('#cName').select()};
@@ -787,11 +805,15 @@ async function extract(file){const ext=(file.name.split('.').pop()||'').toLowerC
   if(ext==='xlsx'||ext==='xls'){await loadLib('xlsx');const wb=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array'});return{text:wb.SheetNames.map(n=>`## 工作表：${n}\n`+XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false})).join('\n\n')}}
   if(['txt','md','csv','json'].includes(ext))return{text:await file.text()};
   throw new Error('不支援的檔案格式（.'+ext+'）')}
-async function handleFiles(list){const files=[...list];if(!files.length)return;const st=$('#upStatus');const d=cur();let ok=0,fail=[];
+async function ingest(list,arr,st){const files=[...list];let ok=0,fail=[];
   for(const [i,f] of files.entries()){st.textContent=`解析中（${i+1}/${files.length}）：${f.name}`;
     if(f.size>25*1024*1024){fail.push(f.name+'：檔案超過 25 MB');continue}
-    try{const r=await extract(f);let text=(r.text||'').trim();const full=text.length;text=text.slice(0,FILE_LIMIT);d.files.push({name:f.name,size:f.size,cat:guessCat(f.name),text,full,pages:r.pages||null,at:new Date().toISOString().slice(0,10)});ok++}catch(e){fail.push(f.name+'：'+(e.message||'解析失敗'))}}
-  const saved=saveDeals();renderFiles();renderCk();renderCmSum();
+    try{const r=await extract(f);let text=(r.text||'').trim();const full=text.length;text=text.slice(0,FILE_LIMIT);arr.push({name:f.name,size:f.size,cat:guessCat(f.name),text,full,pages:r.pages||null,at:new Date().toISOString().slice(0,10)});ok++}catch(e){fail.push(f.name+'：'+(e.message||'解析失敗'))}}
+  const saved=saveDeals();return{ok,fail,saved}}
+async function agentUpload(a,list){if(!list||!list.length)return;const d=cur();d.agentFiles=d.agentFiles||{};const arr=d.agentFiles[a.id]=d.agentFiles[a.id]||[];const st=$('#ags-'+a.id);const {ok,fail,saved}=await ingest(list,arr,st);renderAgentFiles();renderCmSum();st.textContent=`已加入 ${ok} 份。`+(fail.length?'未成功：'+fail.join('；'):'')+(saved?'':' 儲存空間不足，重新整理後需重新上傳。')}
+function renderAgentFiles(){const d=cur();AGENTS.forEach(a=>{const arr=((d.agentFiles||{})[a.id])||[];const el=$('#afl-'+a.id);el.innerHTML=arr.length?arr.map((f,i)=>`<span class="chip">${esc(f.name)} <small>${fmt(f.full||f.text.length)} 字${(f.pages?f.text.replace(/\[第 \d+ 頁\]/g,'').trim().length<f.pages*20:!f.text.trim())?'｜讀不到文字':''}</small><button type="button" class="ghost" data-a="${a.id}" data-i="${i}" aria-label="移除 ${esc(f.name)}" style="padding:0 6px;margin-left:4px">×</button></span>`).join(''):'';el.querySelectorAll('button').forEach(b=>b.onclick=()=>{d.agentFiles[b.dataset.a].splice(+b.dataset.i,1);saveDeals();renderAgentFiles();renderCmSum()})})}
+async function handleFiles(list){const files=[...list];if(!files.length)return;const st=$('#upStatus');const d=cur();
+  const {ok,fail,saved}=await ingest(files,d.files,st);renderFiles();renderCk();renderCmSum();
   st.textContent=`已加入 ${ok} 份文件。`+(fail.length?' 未成功：'+fail.join('；'):'')+(saved?'':' 注意：瀏覽器儲存空間不足，重新整理後需重新上傳。')}
 $('#cFile').onchange=e=>{handleFiles(e.target.files);e.target.value=''};
 const drop=$('#drop');['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over')}));['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
@@ -819,6 +841,69 @@ $('#finAI').onclick=async e=>{if(!ai)return;const d=cur();if(!d.files.length&&!d
   catch(err){$('#finMsg').textContent='擷取失敗：'+(err?.code==='bad_code'?'存取碼錯誤，請到「投資決策委員會」頁輸入。':err?.message||'AI 回應無法解析，請重試或手動輸入。')}
   b.disabled=false};
 loadDeal();renderCk();
+
+/* ---------- quick upload on committee ---------- */
+(()=>{const inp=$('#cmFile'),dz=$('#cmDrop');const go=async list=>{if(!list||!list.length)return;const st=$('#cStatus');st.style.display='';st.dataset.k='run';const {ok,fail}=await ingest(list,cur().files,st);renderFiles();renderCk();renderCmSum();st.textContent=`已加入 ${ok} 份共用文件。`+(fail.length?'未成功：'+fail.join('；'):'');if(ok&&ai&&!$('#runCommittee').disabled)$('#runCommittee').click();else if(ok&&!ai)st.textContent+=' AI 目前無法使用，文件已保存。'};
+  inp.onchange=e=>{go(e.target.files);e.target.value=''};['dragenter','dragover'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over')}));dz.addEventListener('drop',e=>go(e.dataTransfer.files))})();
+
+/* ---------- PPT report ---------- */
+const PPT_LIB='https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js';
+function parseJSON(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');return JSON.parse(t.slice(a,b+1))}
+async function reportJSON(){const d=cur();const done=AGENTS.filter(a=>agentResults[a.id]);
+  const prompt=`將以下投資決策委員會的分析整理成簡報內容。只回傳一個 JSON 物件，不要任何其他文字。使用繁體中文（台灣用語）。每個條列 40 字以內，每個陣列最多 6 項，不得新增原文沒有的數字或事實。
+格式：{"rating":"值得深入評估|有條件評估|需要改善|不建議","score":0-100 的整數或 null,"summary":"三句以內的結論","scoreBreakdown":[{"item":"財務健康","score":數字,"max":20}，依財務健康20、市場潛力15、技術競爭力15、團隊與治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10],"veto":[{"item":"重大法律問題","status":"通過|疑慮|未知","note":"短說明"}，共四項：重大法律問題、財務造假疑慮、專利權屬、臨床安全],"highlights":[""],"risks":[{"level":"高|中|低","risk":"","mitigation":""}],"valuation":[""],"exit":[""],"nextSteps":[""],"missing":[""],"agents":[{"name":"Agent 名稱","score":"X / 10","points":["最多 3 點"]}]}
+
+公司：${d.name}｜${d.ind}｜${d.stage}｜委託人：${d.role}
+
+總控報告：
+${orchText}
+
+各專家意見：
+${done.map(a=>`【${a.name}】\n${agentResults[a.id]}`).join('\n\n')}`;
+  const r=await ai(prompt,{modelTier:'default'});return parseJSON(r.text)}
+function buildPpt(J){const d=cur();const P=new PptxGenJS();P.layout='LAYOUT_WIDE';P.title=d.name+' 投資決策分析報告';P.company='AI Capital Intelligence';
+  const F='Microsoft JhengHei',NAVY='13243D',BRASS='A77D2C',MUTED='5D6A7D',LINE='D9DEE6',SOFT='F3EAD7';const RC={'值得深入評估':'1F7A4D','有條件評估':'B26B00','需要改善':'B26B00','不建議':'B3261E'};const LC={'高':'B3261E','中':'B26B00','低':'1F7A4D'};
+  const date=new Date().toLocaleDateString('zh-TW');let n=0;
+  const base=(title,eyebrow)=>{const s=P.addSlide();s.background={color:'FFFFFF'};n++;s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:0.12,fill:{color:NAVY}});if(eyebrow)s.addText(eyebrow,{x:0.6,y:0.35,w:9,h:0.3,fontFace:F,fontSize:11,color:BRASS,bold:true,charSpacing:2});s.addText(title,{x:0.6,y:0.62,w:12,h:0.7,fontFace:F,fontSize:26,bold:true,color:NAVY});s.addShape(P.ShapeType.line,{x:0.6,y:1.38,w:12.1,h:0,line:{color:LINE,width:1}});s.addText(`${d.name}｜AI Capital Intelligence`,{x:0.6,y:7.0,w:9,h:0.3,fontFace:F,fontSize:9,color:MUTED});s.addText(String(n),{x:12.2,y:7.0,w:0.5,h:0.3,fontFace:F,fontSize:9,color:MUTED,align:'right'});return s};
+  const bullets=(s,arr,o={})=>{const a=(arr||[]).filter(Boolean);if(!a.length){s.addText('（無資料）',{x:o.x??0.6,y:o.y??1.6,w:o.w??12.1,h:0.5,fontFace:F,fontSize:14,color:MUTED});return}s.addText(a.map(t=>({text:String(t),options:{bullet:{code:'25A0'},paraSpaceAfter:8}})),{x:o.x??0.6,y:o.y??1.6,w:o.w??12.1,h:o.h??5.2,fontFace:F,fontSize:o.fs??17,color:'18212E',valign:'top',fit:'shrink'})};
+  // 1 cover
+  {const s=P.addSlide();n++;s.background={color:NAVY};s.addText('AI 投資決策委員會分析報告',{x:0.8,y:1.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'D6AD5C',bold:true,charSpacing:3});s.addText(d.name,{x:0.8,y:2.2,w:11.7,h:1.3,fontFace:F,fontSize:38,bold:true,color:'FFFFFF',fit:'shrink'});s.addText(`${d.ind}｜${d.stage}`,{x:0.8,y:3.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'C9D3E2'});
+    if(J.rating)s.addText(`評級：${J.rating}`+(J.score!=null?`　投資總分：${J.score} / 100`:''),{x:0.8,y:4.5,w:7.5,h:0.6,fontFace:F,fontSize:18,bold:true,color:'FFFFFF',fill:{color:RC[J.rating]||BRASS},margin:0.15});
+    s.addText(`報告日期：${date}　委託人角色：${d.role}`,{x:0.8,y:6.4,w:11.5,h:0.4,fontFace:F,fontSize:12,color:'9FB0C7'})}
+  // 2 conclusion
+  {const s=base('決策結論','EXECUTIVE SUMMARY');s.addText(J.rating||'—',{x:0.6,y:1.7,w:4,h:0.9,fontFace:F,fontSize:30,bold:true,color:RC[J.rating]||NAVY});s.addText(J.score!=null?`${J.score}`:'—',{x:0.6,y:2.6,w:2.4,h:1.3,fontFace:'Arial',fontSize:66,bold:true,color:NAVY});s.addText('/ 100　投資總分',{x:2.7,y:3.15,w:2.6,h:0.5,fontFace:F,fontSize:14,color:MUTED});
+    s.addText(J.summary||'',{x:5.4,y:1.7,w:7.3,h:2.3,fontFace:F,fontSize:16,color:'18212E',valign:'top',fit:'shrink'});
+    const vt=[[{text:'否決條件',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}},{text:'狀態',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}},{text:'說明',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}}]].concat((J.veto||[]).map(v=>[v.item||'',{text:v.status||'',options:{bold:true,color:v.status==='通過'?'1F7A4D':v.status==='疑慮'?'B3261E':'B26B00'}},v.note||'']));
+    s.addTable(vt,{x:0.6,y:4.3,w:12.1,colW:[2.6,1.4,8.1],fontFace:F,fontSize:12,border:{type:'solid',color:LINE,pt:0.75},valign:'middle',rowH:0.42})}
+  // 3 score
+  if((J.scoreBreakdown||[]).length){const s=base('評分明細','SCORECARD');const sb=J.scoreBreakdown;s.addChart(P.ChartType.bar,[{name:'得分',labels:sb.map(x=>x.item),values:sb.map(x=>+x.score||0)},{name:'滿分差距',labels:sb.map(x=>x.item),values:sb.map(x=>Math.max(0,(+x.max||0)-(+x.score||0)))}],{x:0.6,y:1.6,w:7.6,h:5.2,barDir:'bar',barGrouping:'stacked',chartColors:[NAVY,'E3E7EE'],catAxisLabelFontFace:F,catAxisLabelFontSize:12,valAxisHidden:true,valGridLine:{style:'none'},showLegend:false,showValue:false,catAxisOrientation:'maxMin'});
+    s.addTable([[{text:'項目',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}},{text:'得分',options:{bold:true,color:'FFFFFF',fill:{color:NAVY},align:'right'}}]].concat(sb.map(x=>[x.item,{text:`${x.score} / ${x.max}`,options:{align:'right'}}])).concat([[{text:'合計',options:{bold:true}},{text:`${sb.reduce((a,x)=>a+(+x.score||0),0)} / ${sb.reduce((a,x)=>a+(+x.max||0),0)}`,options:{bold:true,align:'right'}}]]),{x:8.6,y:1.7,w:4.1,colW:[2.6,1.5],fontFace:F,fontSize:12,border:{type:'solid',color:LINE,pt:0.75},rowH:0.42})}
+  // 4 highlights
+  {const s=base('投資亮點','HIGHLIGHTS');bullets(s,J.highlights)}
+  // 5 risks
+  {const s=base('關鍵風險與因應','RISKS');const rk=(J.risks||[]).slice(0,7);s.addTable([[{text:'等級',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}},{text:'風險',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}},{text:'因應建議',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}}]].concat(rk.map(r=>[{text:r.level||'',options:{bold:true,color:'FFFFFF',fill:{color:LC[r.level]||MUTED},align:'center'}},r.risk||'',r.mitigation||''])),{x:0.6,y:1.6,w:12.1,colW:[0.9,5.6,5.6],fontFace:F,fontSize:13,border:{type:'solid',color:LINE,pt:0.75},valign:'middle',autoPage:false})}
+  // 6 financials
+  {const ft=d.fin;const has=FIN_ROWS.some(r=>ft.v[r[0]].some(x=>x!==null&&x!==''));const s=base('財務摘要與估值意見','FINANCIALS & VALUATION');
+    if(has){const rows=[[{text:'新台幣百萬元',options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}}].concat(ft.years.map(y=>({text:String(y),options:{bold:true,color:'FFFFFF',fill:{color:NAVY},align:'right'}})))].concat(FIN_ROWS.map(r=>[r[1]].concat(ft.years.map((_,i)=>({text:ft.v[r[0]][i]==null?'—':fmt(ft.v[r[0]][i],1),options:{align:'right'}})))));s.addTable(rows,{x:0.6,y:1.6,w:6.4,fontFace:F,fontSize:11,border:{type:'solid',color:LINE,pt:0.75},rowH:0.38});bullets(s,J.valuation,{x:7.3,y:1.6,w:5.4,fs:14})}
+    else bullets(s,J.valuation)}
+  // 7 agents
+  const ag=(J.agents||[]).filter(a=>a&&a.name);for(let i=0;i<ag.length;i+=4){const s=base('專家委員意見摘要'+(ag.length>4?`（${i/4+1}）`:''),'EXPERT PANEL');ag.slice(i,i+4).forEach((a,k)=>{const x=0.6+(k%2)*6.15,y=1.6+Math.floor(k/2)*2.7;s.addShape(P.ShapeType.rect,{x,y,w:5.95,h:2.5,fill:{color:'F5F6F8'},line:{color:LINE,width:0.75}});s.addShape(P.ShapeType.rect,{x,y,w:0.08,h:2.5,fill:{color:BRASS},line:{color:BRASS,width:0}});s.addText(a.name,{x:x+0.25,y:y+0.12,w:4.2,h:0.45,fontFace:F,fontSize:15,bold:true,color:NAVY});s.addText(a.score||'',{x:x+4.3,y:y+0.12,w:1.5,h:0.45,fontFace:F,fontSize:14,bold:true,color:BRASS,align:'right'});s.addText((a.points||[]).slice(0,3).map(t=>({text:String(t),options:{bullet:true,paraSpaceAfter:4}})),{x:x+0.25,y:y+0.6,w:5.55,h:1.8,fontFace:F,fontSize:12,color:'18212E',valign:'top',fit:'shrink'})})}
+  // 8 exit & next
+  {const s=base('退出策略與下一步行動','EXIT & NEXT STEPS');s.addText('退出策略',{x:0.6,y:1.55,w:5.8,h:0.4,fontFace:F,fontSize:15,bold:true,color:BRASS});bullets(s,J.exit,{x:0.6,y:2.0,w:5.8,h:4.8,fs:14});s.addText('下一步行動',{x:6.9,y:1.55,w:5.8,h:0.4,fontFace:F,fontSize:15,bold:true,color:BRASS});s.addText((J.nextSteps||[]).map((t,i)=>({text:String(t),options:{bullet:{type:'number'},paraSpaceAfter:6}})),{x:6.9,y:2.0,w:5.8,h:4.8,fontFace:F,fontSize:14,color:'18212E',valign:'top',fit:'shrink'})}
+  // 9 missing & sources
+  {const s=base('待補資料與分析依據','DATA');s.addText('待補資料',{x:0.6,y:1.55,w:5.8,h:0.4,fontFace:F,fontSize:15,bold:true,color:BRASS});bullets(s,J.missing,{x:0.6,y:2.0,w:5.8,h:4.8,fs:14});const files=d.files.map(f=>`${f.name}（${f.cat}）`).concat(...AGENTS.map(a=>(((d.agentFiles||{})[a.id])||[]).map(f=>`${f.name}（${a.name} 專屬）`)));s.addText('分析使用的文件',{x:6.9,y:1.55,w:5.8,h:0.4,fontFace:F,fontSize:15,bold:true,color:BRASS});bullets(s,files.length?files:['公司說明與財務數據表'],{x:6.9,y:2.0,w:5.8,h:4.8,fs:12})}
+  // 10 disclaimer
+  {const s=base('聲明','DISCLAIMER');s.addText('本報告由 AI Capital Intelligence 平台之 AI 專家 Agent 依使用者提供之資料產出，屬分析輔助性質，不構成法律意見、會計簽證或投資建議。報告內容可能因資料不完整或 AI 判讀限制而有誤，正式投資決策前應由合格之律師、會計師及投資專業人士複核。',{x:0.6,y:1.7,w:12.1,h:2,fontFace:F,fontSize:15,color:'18212E',valign:'top'});s.addText(`產出日期：${date}`,{x:0.6,y:4.0,w:6,h:0.4,fontFace:F,fontSize:12,color:MUTED})}
+  return P}
+$('#mkPpt').onclick=async e=>{if(!ai)return;const b=e.target,st=$('#pptSt');st.style.display='';const done=AGENTS.filter(a=>agentResults[a.id]);if(!done.length){st.textContent='尚無任何 Agent 分析結果。請先召開委員會，或在專家卡片按「單獨分析」。';return}
+  b.disabled=true;try{
+    if(orchStale||!orchText){st.textContent=`總控 Orchestrator 彙整 ${done.length} 位專家意見中…`;await runOrchestrator()}
+    st.textContent='整理簡報內容中…';const [J]=await Promise.all([reportJSON(),loadScript(PPT_LIB)]);
+    st.textContent='產生 PowerPoint 中…';const P=buildPpt(J);const blob=await P.write({outputType:'blob'});
+    const fname=`${cur().name.replace(/[\\/:*?"<>|]/g,'')}_投資決策分析報告_${new Date().toISOString().slice(0,10)}.pptx`;
+    if(dl){try{await dl.save({filename:fname,data:blob});st.textContent='簡報已產出：'+fname}catch(err){st.textContent='下載未完成：'+(err?.message||'已取消')}}
+    else{const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);st.innerHTML='簡報已下載：'+esc(fname)}
+  }catch(err){st.textContent='產出失敗：'+(err?.code==='bad_code'?'存取碼錯誤。':err?.message||'請稍後再試。')}b.disabled=false};
 })();
 </script>
 </body>
