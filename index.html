@@ -869,7 +869,8 @@ loadDeal();renderCk();
   inp.onchange=e=>{go(e.target.files);e.target.value=''};['dragenter','dragover'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over')}));dz.addEventListener('drop',e=>go(e.dataTransfer.files))})();
 
 /* ---------- PPT report ---------- */
-const PPT_LIB='https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js';
+const PPT_LIBS=['https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js','https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'];
+async function loadPpt(){if(window.PptxGenJS)return;let last;for(const u of PPT_LIBS){try{await loadScript(u);if(window.PptxGenJS)return}catch(e){last=e}}throw new Error('無法載入簡報產生元件，請檢查網路後重試')}
 function parseJSON(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');return JSON.parse(t.slice(a,b+1))}
 async function reportJSON(list){const d=cur();const done=list||AGENTS.filter(a=>agentResults[a.id]);
   const prompt=`將以下投資決策委員會的分析整理成簡報內容。只回傳一個 JSON 物件，不要任何其他文字。使用繁體中文（台灣用語）。每個條列 40 字以內，每個陣列最多 6 項，不得新增原文沒有的數字或事實。
@@ -922,8 +923,8 @@ $('#mkPpt').onclick=async e=>{if(!ai)return;const b=e.target,st=$('#pptSt');st.s
     const d=cur();const list=d.orch&&d.orch.list&&d.orch.list.every(id=>agentResults[id])?AGENTS.filter(a=>d.orch.list.includes(a.id)):done;
     if(!(d.orch&&d.orch.fp===orchFp(list))){st.textContent=`總控 Orchestrator 彙整 ${list.length} 位專家意見中…`;await runOrchestrator(null,list)}
     const rfp=hash(PROMPT_VER+orchText+list.map(a=>agentResults[a.id]).join('|'));let J;
-    if(d.rep&&d.rep.fp===rfp){st.textContent='沿用先前整理的簡報內容…';J=d.rep.json;await loadScript(PPT_LIB)}
-    else{st.textContent='整理簡報內容中…';[J]=await Promise.all([reportJSON(list),loadScript(PPT_LIB)]);d.rep={fp:rfp,json:J};saveDeals()}
+    if(d.rep&&d.rep.fp===rfp){st.textContent='沿用先前整理的簡報內容…';J=d.rep.json;await loadPpt()}
+    else{st.textContent='整理簡報內容中…';[J]=await Promise.all([reportJSON(list),loadPpt()]);d.rep={fp:rfp,json:J};saveDeals()}
     st.textContent='產生 PowerPoint 中…';const P=buildPpt(J);const blob=await P.write({outputType:'blob'});
     const fname=`${cur().name.replace(/[\\/:*?"<>|]/g,'')}_投資決策分析報告_${new Date().toISOString().slice(0,10)}.pptx`;
     if(dl){try{await dl.save({filename:fname,data:blob});st.textContent='簡報已產出：'+fname}catch(err){st.textContent='下載未完成：'+(err?.message||'已取消')}}
