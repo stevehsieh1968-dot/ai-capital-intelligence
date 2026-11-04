@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Capital Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: 投資銀行式工作台 — 左側深色導覽列，右側紙白工作區；數字一律等寬，狀態以色條表示 */
+:root{
+  --ink:#13243d;        /* 主色：深海軍藍 */
+  --paper:#f5f6f8;      /* 背景 */
+  --card:#ffffff;
+  --line:#d9dee6;
+  --muted:#5d6a7d;
+  --text:#18212e;
+  --brass:#a77d2c;      /* 強調：黃銅 */
+  --brass-soft:#f3ead7;
+  --good:#1f7a4d; --warn:#b26b00; --bad:#b3261e;
+  --side:#13243d; --side-text:#c9d3e2; --side-active:#ffffff;
+  --display:"Noto Serif TC","Songti TC",serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#dfe7f3;--paper:#0e1622;--card:#152132;--line:#26364d;--muted:#93a1b5;--text:#e6ecf4;
+    --brass:#d6ad5c;--brass-soft:#2c2618;--good:#4cc08a;--warn:#e3a040;--bad:#f07a70;
+    --side:#0a111b;--side-text:#9fb0c7;--side-active:#ffffff;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#dfe7f3;--paper:#0e1622;--card:#152132;--line:#26364d;--muted:#93a1b5;--text:#e6ecf4;
+  --brass:#d6ad5c;--brass-soft:#2c2618;--good:#4cc08a;--warn:#e3a040;--bad:#f07a70;
+  --side:#0a111b;--side-text:#9fb0c7;--side-active:#ffffff;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.65}
+a{color:var(--brass)}
+h1,h2,h3{font-family:var(--display);color:var(--ink);text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:28px}h2{font-size:21px}h3{font-size:16.5px}
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100%}
+nav.side{background:var(--side);color:var(--side-text);padding:22px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:0 8px 18px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:12px}
+.brand b{display:block;font-family:var(--display);color:#fff;font-size:18px;letter-spacing:.02em}
+.brand span{font-size:12px;color:#d6ad5c}
+.navgroup{font-size:11px;letter-spacing:.12em;color:#7f8fa6;padding:12px 10px 4px}
+nav.side a{display:flex;gap:10px;align-items:center;color:var(--side-text);text-decoration:none;padding:7px 10px;border-radius:6px;font-size:14px}
+nav.side a .n{font-family:var(--mono);font-size:11px;color:#7f8fa6;width:18px}
+nav.side a:hover{background:rgba(255,255,255,.06)}
+nav.side a.on{background:rgba(214,173,92,.16);color:var(--side-active)}
+nav.side a.on .n{color:#d6ad5c}
+main{padding:28px clamp(16px,3vw,40px) 60px;min-width:0}
+.view{display:none;max-width:1180px}
+.view.on{display:block}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--brass);font-weight:700;margin-bottom:6px}
+.lede{color:var(--muted);max-width:68ch;margin:8px 0 22px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.card h3{margin-bottom:6px}
+.card p{margin:4px 0;color:var(--muted);font-size:14px}
+.sec{margin-top:26px;display:flex;flex-direction:column;gap:12px}
+.pill{display:inline-block;font-size:12px;padding:1px 9px;border-radius:99px;background:var(--brass-soft);color:var(--brass);font-weight:500}
+.pill.good{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.stripe{border-left:4px solid var(--brass)}
+.stripe.good{border-left-color:var(--good)}.stripe.warn{border-left-color:var(--warn)}.stripe.bad{border-left-color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;color:var(--ink);background:color-mix(in srgb,var(--line) 35%,transparent)}
+.tw{overflow-x:auto}
+.num,td.num,input.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+td.num{text-align:right}
+label{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+textarea{min-height:120px;resize:vertical}
+.form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:8px 16px;font-weight:500}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.ghost:hover{border-color:var(--ink)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.kpi{display:flex;flex-direction:column;gap:2px}
+.kpi .v{font-family:var(--mono);font-size:24px;color:var(--ink);font-weight:600}
+.kpi .l{font-size:12px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);background:color-mix(in srgb,var(--brass-soft) 60%,transparent);border-radius:8px;padding:10px 12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{background:transparent;color:var(--ink);border:1px solid var(--line);padding:5px 12px;font-size:14px}
+.tabs button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+/* architecture */
+.arch{display:flex;flex-direction:column;gap:10px}
+.arch .layer{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--card)}
+.arch .layer>b{font-size:12px;letter-spacing:.1em;color:var(--brass);display:block;margin-bottom:8px}
+.arch .orch{background:var(--ink);color:var(--paper);border-color:var(--ink);text-align:center}
+.arch .orch h3{color:var(--paper)}
+.arch .orch>b{color:#d6ad5c}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:13.5px;background:var(--paper);text-decoration:none;color:var(--text)}
+a.chip:hover{border-color:var(--brass)}
+.chip small{display:block;color:var(--muted);font-size:11.5px}
+.arrow{text-align:center;color:var(--muted);font-size:13px}
+/* agents */
+.agent{display:flex;flex-direction:column;gap:8px}
+.agent .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.agent .out{font-size:14px;color:var(--text);max-height:420px;overflow:auto;border-top:1px dashed var(--line);padding-top:8px}
+.agent .out:empty{display:none}
+.md h4{margin:10px 0 4px;font-size:14.5px;color:var(--ink)}
+.md ul{margin:4px 0;padding-left:20px}
+.md p{margin:6px 0;color:var(--text)}
+/* score */
+.srow{display:grid;grid-template-columns:150px 1fr 70px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.srow small{display:block;color:var(--muted);font-size:12px}
+input[type=range]{padding:0;accent-color:var(--brass)}
+input[type=checkbox]{width:auto;accent-color:var(--brass)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--text);flex-direction:row;padding:3px 0}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brass)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flow span{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:5px 10px;font-size:13px}
+.flow em{color:var(--muted);font-style:normal}
+.sens td.hl{background:var(--brass-soft);font-weight:600}
+footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border-top:1px solid var(--line);padding-top:14px}
+.menu-btn{display:none}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  nav.side{position:static;height:auto;display:none}
+  nav.side.open{display:block}
+  .menu-btn{display:block;position:sticky;top:0;z-index:5;width:100%;border-radius:0;text-align:left}
+  .srow{grid-template-columns:1fr 60px}.srow input{grid-column:1/-1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" type="button">☰ 功能選單</button>
+<div class="app">
+<nav class="side" id="side">
+  <div class="brand"><b>AI Capital Intelligence</b><span>IPO × 投資 × 併購 × 企業估值</span></div>
+  <div class="navgroup">總覽</div>
+  <a href="#overview" data-v="overview"><span class="n">00</span>平台架構</a>
+  <a href="#committee" data-v="committee"><span class="n">AI</span>投資決策委員會</a>
+  <div class="navgroup">八大功能模組</div>
+  <a href="#ipo" data-v="ipo"><span class="n">01</span>IPO 智慧中心</a>
+  <a href="#bp" data-v="bp"><span class="n">02</span>募資計畫書審查</a>
+  <a href="#valuation" data-v="valuation"><span class="n">03</span>企業估值中心</a>
+  <a href="#biotech" data-v="biotech"><span class="n">04</span>生技估值引擎</a>
+  <a href="#ma" data-v="ma"><span class="n">05</span>投資與併購</a>
+  <a href="#ip" data-v="ip"><span class="n">06</span>專利・技術・臨床</a>
+  <a href="#industry" data-v="industry"><span class="n">07</span>產業情報中心</a>
+  <a href="#cases" data-v="cases"><span class="n">08</span>案例資料庫</a>
+  <div class="navgroup">投資標的體檢</div>
+  <a href="#checklist" data-v="checklist"><span class="n">DD</span>資料清單與補件</a>
+  <a href="#score" data-v="score"><span class="n">100</span>投資評分模型</a>
+  <div class="navgroup">產品</div>
+  <a href="#roadmap" data-v="roadmap"><span class="n">→</span>開發藍圖與商業模式</a>
+</nav>
+<main>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="view" id="v-overview">
+  <div class="eyebrow">AI CAPITAL INTELLIGENCE</div>
+  <h1>每一個投資案，在投入資金前，先經過七大專家大腦審查</h1>
+  <p class="lede">建立一個投資案件、上傳公司資料，總控 AI 會把案件分派給法律、會計、投行、創投、產業、專利臨床、策略併購七位專家 Agent，交叉驗證後產出投資決策報告。聚焦 AI、生技醫療與未來明星產業。</p>
+  <div class="row" style="margin-bottom:18px"><a href="#committee"><button type="button">開始一個投資案件</button></a><a href="#valuation"><button type="button" class="ghost">試用估值計算器</button></a></div>
+
+  <div class="arch">
+    <div class="layer orch"><b>AI 專家決策中樞</b><h3>總控 AI Orchestrator</h3><div style="font-size:13px;opacity:.85">案件管理｜資料整合｜Agent 分派｜交叉驗證｜決策報告</div></div>
+    <div class="arrow">▼ 分派至功能模組</div>
+    <div class="layer"><b>八大功能模組</b>
+      <div class="chips">
+        <a class="chip" href="#ipo">IPO 智慧中心<small>興櫃、上市、上櫃、創新板路徑</small></a>
+        <a class="chip" href="#bp">募資計畫審查<small>BP、募資策略、投資亮點</small></a>
+        <a class="chip" href="#valuation">企業估值中心<small>DCF、倍數、稀釋</small></a>
+        <a class="chip" href="#biotech">生技估值引擎<small>rNPV、Pipeline、SOTP</small></a>
+        <a class="chip" href="#ma">投資與併購中心<small>DD、綜效、交易架構</small></a>
+        <a class="chip" href="#ip">專利與技術中心<small>IP、FTO、TRL、臨床</small></a>
+        <a class="chip" href="#industry">產業情報中心<small>AI、生技、半導體、能源</small></a>
+        <a class="chip" href="#cases">案例與資料庫<small>IPO、募資、併購、失敗案例</small></a>
+      </div>
+    </div>
+    <div class="arrow">▼ 由專家 Agent 執行與交叉檢查</div>
+    <div class="layer"><b>七大專家 AI Agent</b>
+      <div class="chips" id="agentChips"></div>
+    </div>
+    <div class="arrow">▲ 讀取</div>
+    <div class="layer"><b>資料與知識底層</b>
+      <div class="chips">
+        <span class="chip">財務報表與營運數據</span><span class="chip">上市櫃與興櫃資料</span><span class="chip">產業與市場研究</span><span class="chip">專利與技術資料</span><span class="chip">臨床試驗與法規</span><span class="chip">募資與併購案例</span><span class="chip">投資人與交易資料</span><span class="chip">企業內部文件</span>
+      </div>
+    </div>
+    <div class="layer stripe"><b>最終輸出：投資決策報告</b>
+      <div class="flow"><span>投資價值</span><span>企業估值</span><span>風險清單</span><span>募資建議</span><span>股權稀釋</span><span>退出策略</span><span>投資簡報</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>使用流程</h2>
+    <div class="flow">
+      <span>建立投資案件</span><em>→</em><span>上傳公司資料與募資計畫</span><em>→</em><span>AI 資料辨識與缺件檢查</span><em>→</em><span>七大專家 Agent 分析</span><em>→</em><span>財務／法律／技術／市場 DD</span><em>→</em><span>企業估值與投資評分</span><em>→</em><span><b>投資決策</b></span>
+    </div>
+    <div class="grid g3">
+      <div class="card stripe good"><h3>值得深入評估</h3><p>進入募資與投資條件設計 → 投資簡報與 Roadshow</p></div>
+      <div class="card stripe warn"><h3>需要改善</h3><p>產出企業改善及募資計畫 → 投資簡報與 Roadshow</p></div>
+      <div class="card stripe bad"><h3>不建議</h3><p>產出風險報告與暫緩建議</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMMITTEE ============ -->
+<section class="view" id="v-committee">
+  <div class="eyebrow">AI 投資決策委員會</div>
+  <h1>建立投資案件</h1>
+  <p class="lede">填入公司資料或貼上募資計畫書文字，選擇要出席的專家 Agent。每位專家依自己的專業出具意見，最後由總控 Agent 交叉驗證並給出評級。</p>
+  <div class="card">
+    <div class="form">
+      <label for="cName">公司／專案名稱<input id="cName" value="示範：明日醫影 AI 股份有限公司"></label>
+      <label for="cInd">產業<select id="cInd"><option>AI 醫療</option><option>AI 軟體／Agent</option><option>生技新藥</option><option>細胞治療／再生醫學</option><option>醫療器材／醫療科技</option><option>半導體</option><option>能源與儲能</option><option>長壽科技</option><option>機器人</option><option>國防科技</option><option>其他</option></select></label>
+      <label for="cStage">資本市場階段<select id="cStage"><option>未公開發行／新創</option><option>公開發行，準備登錄興櫃</option><option>興櫃，準備上市或上櫃</option><option>上市櫃公司</option><option>非營利組織衍生事業</option></select></label>
+      <label for="cRole">我的角色<select id="cRole"><option>投資人：評估是否投資</option><option>企業：準備募資或 IPO</option><option>併購買方</option><option>併購賣方</option></select></label>
+    </div>
+    <label for="cDesc" style="margin-top:10px">公司資料／募資計畫書內容（可貼上文字，或上傳 .txt / .md / .csv）
+      <textarea id="cDesc" style="min-height:170px">產品：AI 醫療影像輔助判讀系統（胸部 X 光、肺結節），已取得 TFDA 醫材許可，美國 FDA 510(k) 申請中。
+商業模式：向醫院收取一次性軟體授權費，每套約新台幣 300 萬元，目前導入 18 家醫院。
+財務：2025 年營收新台幣 6,200 萬元，毛利率 72%，稅後虧損 3,800 萬元，每月燒錢約 450 萬元，帳上現金 5,100 萬元。
+專利：台灣核准專利 3 件、美國申請中 2 件，演算法部分以營業秘密保護。
+團隊：創辦人為放射科醫師，技術長曾任大型科技公司 AI 研究員，研發人員 22 人。
+募資：本輪計畫募資新台幣 2 億元，投資前估值 12 億元，資金用於美國市場、臨床驗證與新適應症。
+目標：三年內登錄興櫃，五年內申請上櫃（創新板或一般板）。</textarea></label>
+    <div class="row" id="codeRow" style="margin-top:10px;display:none"><label for="accessCode" style="flex-direction:row;align-items:center;gap:8px">AI 存取碼<input id="accessCode" type="password" autocomplete="off" style="width:200px"></label><span style="font-size:13px;color:var(--muted)">由網站管理者提供</span></div>
+    <div class="row" style="margin-top:10px">
+      <input type="file" id="cFile" accept=".txt,.md,.csv,.json" style="max-width:320px">
+    </div>
+    <div style="margin-top:12px"><div class="navgroup" style="padding-left:0;color:var(--muted)">出席的專家 Agent</div><div class="chips" id="agentPick"></div></div>
+    <div class="row" style="margin-top:14px">
+      <button type="button" id="runCommittee" disabled>召開委員會</button>
+      <button type="button" class="ghost" id="stopCommittee" disabled>停止</button>
+      <span id="cStatus" class="note" style="display:none"></span>
+    </div>
+  </div>
+  <div class="grid g2" id="agentCards" style="margin-top:14px"></div>
+  <div class="card stripe" id="orchCard" style="margin-top:14px;display:none">
+    <div class="hd row" style="justify-content:space-between"><h3>總控 Orchestrator：投資決策報告</h3><span class="pill" id="orchPill">等待中</span></div>
+    <div class="out md" id="orchOut" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:10px"><button type="button" class="ghost" id="copyReport">複製完整報告</button></div>
+  </div>
+</section>
+
+<!-- ============ IPO ============ -->
+<section class="view" id="v-ipo">
+  <div class="eyebrow">模組 01</div>
+  <h1>IPO 智慧中心</h1>
+  <p class="lede">依公司目前位置選擇路徑，逐項勾選準備度。上市、上櫃、創新板的資格條件會隨法規修訂，正式條件以臺灣證券交易所與證券櫃檯買賣中心公告為準。</p>
+  <div class="tabs" id="ipoTabs"></div>
+  <div class="grid g2">
+    <div class="card"><div class="row" style="justify-content:space-between"><h3 id="ipoTitle"></h3><span class="pill" id="ipoPct"></span></div><p id="ipoDesc"></p><div class="bar" style="margin:10px 0"><i id="ipoBar"></i></div><div id="ipoList"></div></div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><h3>IPO 時程粗估</h3>
+        <div class="form" style="margin-top:8px">
+          <label for="ipoNow">目前位置<select id="ipoNow"><option value="0">未公開發行</option><option value="1">已公開發行</option><option value="2">已登錄興櫃</option></select></label>
+          
+        </div>
+        <div class="tw" style="margin-top:10px"><table id="ipoTime"></table></div>
+        <p class="note" style="margin-top:8px">期間為實務常見範圍，供規劃用；實際時程取決於輔導進度、審查及市場狀況。承銷、會計師、律師等費用依募資規模與承銷商報價而定。</p>
+      </div>
+      <div class="card stripe warn"><h3>非營利組織的上市路徑</h3><p>基金會、協會、研究機構不能直接以本身申請 IPO。可行做法是設立營利子公司、技術授權、事業分割或衍生新創，建立可投資、可募資的商業實體，再由該實體走資本市場路徑。</p></div>
+      <div class="card"><h3>官方規範</h3><p><a href="https://www.twse.com.tw/" target="_blank" rel="noopener">臺灣證券交易所（上市）</a></p><p><a href="https://www.tpex.org.tw/" target="_blank" rel="noopener">證券櫃檯買賣中心（上櫃、興櫃、創新板）</a></p><p><a href="https://www.sfb.gov.tw/" target="_blank" rel="noopener">金管會證券期貨局</a></p></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>AI 上市路徑診斷</h3><button type="button" class="ghost ai-btn" disabled data-ai="ipo">請 AI 診斷</button></div><p>依「投資決策委員會」頁填寫的公司資料，評估最適路徑、主要缺口與改善順序。</p><div class="out md" id="ai-ipo"></div></div>
+</section>
+
+<!-- ============ BP ============ -->
+<section class="view" id="v-bp">
+  <div class="eyebrow">模組 02</div>
+  <h1>募資計畫書審查中心</h1>
+  <p class="lede">AI 不只找缺點，也要幫企業重新設計投資價值：結合技術、專利、商業模式、策略合作與資本市場路徑。</p>
+  <div class="grid g2">
+    <div class="card"><h3>九項審查自評</h3><p>為每項打分（1–5），找出 BP 的弱點。</p><div id="bpSelf" style="margin-top:8px"></div><div class="row" style="margin-top:10px;justify-content:space-between"><span>完整度</span><span class="num" id="bpTotal"></span></div><div class="bar"><i id="bpBar"></i></div></div>
+    <div class="card"><h3>可加入的亮點</h3>
+      <div class="tw"><table><tr><th>面向</th><th>升級方向</th></tr>
+      <tr><td>技術</td><td>整合多模態 AI、真實世界數據，提高技術壁壘</td></tr>
+      <tr><td>專利 IP</td><td>盤點演算法、資料處理、應用專利與營業秘密，建立專利家族</td></tr>
+      <tr><td>臨床證據</td><td>多中心臨床、真實世界證據、法規里程碑時程</td></tr>
+      <tr><td>商業模式</td><td>一次性授權轉為 SaaS 年費、按量計費或服務分潤</td></tr>
+      <tr><td>策略合作</td><td>醫院、醫材公司、藥廠、保險業、跨國通路</td></tr>
+      <tr><td>資本市場</td><td>營收成長軌跡、海外市場、未來 IPO 或併購退出路徑</td></tr>
+      </table></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>AI 募資計畫書審查與升級建議</h3><button type="button" class="ghost ai-btn" disabled data-ai="bp">請 AI 審查</button></div><p>使用「投資決策委員會」頁的內容，依九項標準逐項審查，提出可加入的亮點、改寫建議與投資人可能提出的問題。</p><div class="out md" id="ai-bp"></div></div>
+</section>
+
+<!-- ============ VALUATION ============ -->
+<section class="view" id="v-valuation">
+  <div class="eyebrow">模組 03</div>
+  <h1>企業估值中心</h1>
+  <p class="lede">八個 Agent 串成估值工作流程。下方三個計算器可直接操作：DCF 含敏感度分析、同業倍數、募資與股權稀釋。單位皆為新台幣百萬元。</p>
+  <div class="flow" id="valFlow" style="margin-bottom:16px"></div>
+  <div class="tabs" id="valTabs"><button type="button" class="on" data-t="dcf">DCF 現金流折現</button><button type="button" data-t="mult">同業倍數</button><button type="button" data-t="round">募資與股權稀釋</button></div>
+
+  <div class="vt" id="vt-dcf">
+    <div class="grid g2">
+      <div class="card"><h3>假設</h3><div class="form" style="margin-top:8px">
+        <label for="dFcf">基期自由現金流<input class="num" id="dFcf" type="number" value="120"></label>
+        <label for="dG1">第 1–3 年成長率 %<input class="num" id="dG1" type="number" value="25"></label>
+        <label for="dG2">第 4–5 年成長率 %<input class="num" id="dG2" type="number" value="12"></label>
+        <label for="dW">WACC %<input class="num" id="dW" type="number" value="11"></label>
+        <label for="dTg">永續成長率 %<input class="num" id="dTg" type="number" value="2.5"></label>
+        <label for="dNd">淨負債（負值為淨現金）<input class="num" id="dNd" type="number" value="-300"></label>
+        <label for="dSh">流通股數（百萬股）<input class="num" id="dSh" type="number" value="80"></label>
+      </div></div>
+      <div class="card"><h3>結果</h3><div class="grid g3" style="margin-top:8px" id="dKpi"></div><div class="tw" style="margin-top:12px"><table id="dTable"></table></div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><h3>敏感度分析：每股價值（元）</h3><p>列為 WACC，欄為永續成長率；黃銅色為目前假設。</p><div class="tw"><table class="sens" id="dSens"></table></div></div>
+  </div>
+
+  <div class="vt" id="vt-mult" style="display:none">
+    <div class="grid g2">
+      <div class="card"><h3>目標公司指標</h3><div class="form" style="margin-top:8px">
+        <label for="mNi">稅後淨利<input class="num" id="mNi" type="number" value="90"></label>
+        <label for="mRev">營收<input class="num" id="mRev" type="number" value="800"></label>
+        <label for="mEb">EBITDA<input class="num" id="mEb" type="number" value="160"></label>
+        <label for="mNd">淨負債<input class="num" id="mNd" type="number" value="-300"></label>
+        <label for="mDisc">未上市流動性折價 %<input class="num" id="mDisc" type="number" value="20"></label>
+      </div></div>
+      <div class="card"><h3>同業倍數（示範數字，請換成實際同業）</h3><div class="tw"><table id="mPeers"></table></div><div class="row" style="margin-top:8px"><button type="button" class="ghost" id="addPeer">新增同業</button></div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><h3>隱含股權價值</h3><div class="tw"><table id="mOut"></table></div><p class="note" style="margin-top:8px">倍數比較須使用相同期間與會計口徑；不同時點的交易倍數不可直接比較。</p></div>
+  </div>
+
+  <div class="vt" id="vt-round" style="display:none">
+    <div class="grid g2">
+      <div class="card"><h3>本輪條件</h3><div class="form" style="margin-top:8px">
+        <label for="rPre">投資前估值 Pre-money<input class="num" id="rPre" type="number" value="1200"></label>
+        <label for="rRaise">募資金額<input class="num" id="rRaise" type="number" value="200"></label>
+        <label for="rSh">現有股數（百萬股）<input class="num" id="rSh" type="number" value="40"></label>
+        <label for="rPool">本輪新增員工認股池（佔投資後）%<input class="num" id="rPool" type="number" value="5"></label>
+      </div>
+      <h3 style="margin-top:14px">現有股東</h3><div class="tw"><table id="rHolders"></table></div></div>
+      <div class="card"><h3>結果</h3><div class="grid g3" id="rKpi" style="margin-top:8px"></div><div class="tw" style="margin-top:12px"><table id="rCap"></table></div><p class="note" style="margin-top:8px">認股池以「投資前擴充」計算（常見於投資條件書），稀釋由既有股東承擔，因此實際每股價格低於 Pre-money ÷ 現有股數。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BIOTECH ============ -->
+<section class="view" id="v-biotech">
+  <div class="eyebrow">模組 04</div>
+  <h1>生技企業專屬估值引擎</h1>
+  <p class="lede">生技公司的價值多在尚未上市的研發管線。逐項管線用 rNPV 估值，再以分部加總法（SOTP）得出企業價值。單位：百萬美元。</p>
+  <div class="tabs" id="bioTabs"><button type="button" class="on" data-t="rnpv">rNPV 管線估值</button><button type="button" data-t="lic">授權與里程碑估值</button><button type="button" data-t="sotp">分部加總 SOTP</button><button type="button" data-t="pos">臨床成功率假設</button></div>
+
+  <div class="bt" id="bt-rnpv">
+    <div class="card"><h3>研發管線</h3><p>商業化期間營收以 3 年爬升至高峰，之後持平；研發成本以全額計入（保守做法）。</p>
+      <div class="tw" style="margin-top:8px"><table id="pipeTable"></table></div>
+      <div class="row" style="margin-top:10px"><button type="button" class="ghost" id="addAsset">新增管線</button><label for="bioR" style="flex-direction:row;align-items:center;gap:6px">折現率 %<input class="num" id="bioR" type="number" value="12" style="width:80px"></label></div>
+    </div>
+    <div class="grid g4" id="pipeKpi" style="margin-top:14px"></div>
+  </div>
+
+  <div class="bt" id="bt-lic" style="display:none">
+    <div class="grid g2">
+      <div class="card"><h3>授權條件</h3><div class="form" style="margin-top:8px">
+        <label for="lUp">簽約金 Upfront<input class="num" id="lUp" type="number" value="20"></label>
+        <label for="lRoy">權利金率 %<input class="num" id="lRoy" type="number" value="8"></label>
+        <label for="lPeak">被授權產品高峰年銷售<input class="num" id="lPeak" type="number" value="600"></label>
+        <label for="lLaunch">距上市年數<input class="num" id="lLaunch" type="number" value="6"></label>
+        <label for="lYears">權利金年數<input class="num" id="lYears" type="number" value="10"></label>
+        <label for="lPos">上市機率 %<input class="num" id="lPos" type="number" value="25"></label>
+        <label for="lR">折現率 %<input class="num" id="lR" type="number" value="12"></label>
+      </div>
+      <h3 style="margin-top:14px">里程碑</h3><div class="tw"><table id="msTable"></table></div><div class="row" style="margin-top:8px"><button type="button" class="ghost" id="addMs">新增里程碑</button></div></div>
+      <div class="card"><h3>授權交易價值</h3><div class="grid g3" id="licKpi" style="margin-top:8px"></div><div class="tw" style="margin-top:12px"><table id="licOut"></table></div></div>
+    </div>
+  </div>
+
+  <div class="bt" id="bt-sotp" style="display:none">
+    <div class="grid g2">
+      <div class="card"><h3>分部價值</h3><p>研發管線自動帶入 rNPV 合計，其他事業分部可手動輸入。</p><div class="tw" style="margin-top:8px"><table id="sotpTable"></table></div><div class="row" style="margin-top:8px"><button type="button" class="ghost" id="addSeg">新增分部</button></div></div>
+      <div class="card"><h3>調整項</h3><div class="form" style="margin-top:8px">
+        <label for="sHq">總部成本現值（扣除）<input class="num" id="sHq" type="number" value="60"></label>
+        <label for="sCash">淨現金（負值為淨負債）<input class="num" id="sCash" type="number" value="45"></label>
+        <label for="sDup">重複計價扣除 %<input class="num" id="sDup" type="number" value="5"></label>
+        <label for="sSh">流通股數（百萬股）<input class="num" id="sSh" type="number" value="120"></label>
+      </div><div class="grid g3" id="sotpKpi" style="margin-top:12px"></div></div>
+    </div>
+  </div>
+
+  <div class="bt" id="bt-pos" style="display:none">
+    <div class="card"><h3>階段轉換成功率</h3><p>預設值參考 BIO／Informa《Clinical Development Success Rates 2011–2020》所有適應症平均；臨床前至一期為本平台假設。腫瘤、罕病、細胞治療等差異很大，請依適應症調整。</p>
+      <div class="tw" style="margin-top:8px"><table id="posTable"></table></div></div>
+  </div>
+</section>
+
+<!-- ============ M&A ============ -->
+<section class="view" id="v-ma">
+  <div class="eyebrow">模組 05</div>
+  <h1>投資與併購中心</h1>
+  <p class="lede">同時服務買方與賣方，並由五個子 Agent 處理標的搜尋、盡職調查、綜效、交易架構與併購後整合。</p>
+  <div class="grid g2">
+    <div class="card"><h3>買方功能</h3><div class="tw"><table><tr><td>尋找潛在投資標的</td></tr><tr><td>產業與技術分析</td></tr><tr><td>投資報酬率分析</td></tr><tr><td>財務與法律 DD</td></tr><tr><td>交易價格與條件</td></tr><tr><td>併購綜效分析</td></tr></table></div></div>
+    <div class="card"><h3>賣方功能</h3><div class="tw"><table><tr><td>評估企業出售價值</td></tr><tr><td>建立企業投資故事</td></tr><tr><td>尋找策略投資人</td></tr><tr><td>資產與 IP 價值評估</td></tr><tr><td>股權出售及增資方案</td></tr><tr><td>交易架構與退出規劃</td></tr></table></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:14px" id="maAgents"></div>
+  <div class="card" style="margin-top:14px"><h3>併購綜效與溢價檢驗</h3><p>綜效現值必須大於支付溢價，交易才為買方創造價值。單位：新台幣百萬元。</p>
+    <div class="grid g2" style="margin-top:8px">
+      <div class="form">
+        <label for="sySt">標的獨立價值<input class="num" id="sySt" type="number" value="2000"></label>
+        <label for="syOf">收購價格<input class="num" id="syOf" type="number" value="2500"></label>
+        <label for="syRev">年營收綜效（全面實現）<input class="num" id="syRev" type="number" value="300"></label>
+        <label for="syMg">營收綜效利潤率 %<input class="num" id="syMg" type="number" value="30"></label>
+        <label for="syCost">年成本綜效（全面實現）<input class="num" id="syCost" type="number" value="80"></label>
+        <label for="syRamp">實現所需年數<input class="num" id="syRamp" type="number" value="3"></label>
+        <label for="syInt">一次性整合成本<input class="num" id="syInt" type="number" value="150"></label>
+        <label for="syTax">稅率 %<input class="num" id="syTax" type="number" value="20"></label>
+        <label for="syR">折現率 %<input class="num" id="syR" type="number" value="10"></label>
+      </div>
+      <div><div class="grid g3" id="syKpi"></div><div class="card stripe" id="syVerdict" style="margin-top:12px"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ IP ============ -->
+<section class="view" id="v-ip">
+  <div class="eyebrow">模組 06</div>
+  <h1>專利、技術與臨床中心</h1>
+  <p class="lede">生技與 AI 產業的差異化來源。專利不能只看名稱，要看權利要求、法律狀態、地域範圍，以及與實際產品的技術對應。</p>
+  <div class="grid g2">
+    <div class="card"><h3>技術成熟度 TRL</h3><label for="trl">目前等級<input type="range" id="trl" min="1" max="9" value="6"></label><div class="row" style="justify-content:space-between;margin-top:6px"><span class="kpi"><span class="v" id="trlV"></span><span class="l">TRL</span></span><span class="pill" id="trlPill"></span></div><p id="trlDesc" style="margin-top:8px"></p></div>
+    <div class="card"><h3>IP 與臨床查核</h3><div id="ipList"></div><div class="row" style="margin-top:8px;justify-content:space-between"><span>完成度</span><span class="num" id="ipPct"></span></div><div class="bar"><i id="ipBar"></i></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>AI 專利與臨床評估</h3><button type="button" class="ghost ai-btn" disabled data-ai="ip">請 AI 評估</button></div><p>依案件資料與上方 TRL、查核結果，評估專利強度、FTO 風險、臨床路徑與商業化潛力。</p><div class="out md" id="ai-ip"></div></div>
+  <div class="card" style="margin-top:14px"><h3>專利與臨床資料來源</h3><p><a href="https://twpat.tipo.gov.tw/" target="_blank" rel="noopener">經濟部智慧財產局專利檢索</a>｜<a href="https://patents.google.com/" target="_blank" rel="noopener">Google Patents</a>｜<a href="https://clinicaltrials.gov/" target="_blank" rel="noopener">ClinicalTrials.gov</a>｜<a href="https://www.fda.gov.tw/" target="_blank" rel="noopener">衛福部食藥署</a></p></div>
+</section>
+
+<!-- ============ INDUSTRY ============ -->
+<section class="view" id="v-industry">
+  <div class="eyebrow">模組 07</div>
+  <h1>產業情報中心</h1>
+  <p class="lede">未來明星產業觀察資料庫。每個產業追蹤八個面向；選一個產業，可請 AI 產出研究框架與待查清單。</p>
+  <div class="tw card" style="padding:0"><table id="indTable"></table></div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><div class="row"><h3>AI 產業研究框架</h3><select id="indPick" style="width:auto"></select></div><button type="button" class="ghost ai-btn" disabled data-ai="industry">產出研究框架</button></div><p>AI 的知識有截止時間，市場規模與 CAGR 等數字需以最新研究報告核對。</p><div class="out md" id="ai-industry"></div></div>
+</section>
+
+<!-- ============ CASES ============ -->
+<section class="view" id="v-cases">
+  <div class="eyebrow">模組 08</div>
+  <h1>案例資料庫</h1>
+  <p class="lede">每筆案例必須保留交易日期、資料來源、交易條件與估值時點。資料存在你自己的瀏覽器中。</p>
+  <div class="card"><h3>新增案例</h3><div class="form" style="margin-top:8px">
+    <label for="kType">類型<select id="kType"><option>IPO 成功</option><option>募資成功</option><option>併購成功</option><option>失敗案例</option></select></label>
+    <label for="kCo">公司<input id="kCo"></label>
+    <label for="kInd">產業<input id="kInd"></label>
+    <label for="kDate">交易日期<input id="kDate" type="date"></label>
+    <label for="kVal">估值／交易金額與時點<input id="kVal"></label>
+    <label for="kSrc">資料來源<input id="kSrc"></label>
+  </div><label for="kLesson" style="margin-top:8px">關鍵條件與教訓<textarea id="kLesson" style="min-height:70px"></textarea></label><div class="row" style="margin-top:8px"><button type="button" id="addCase">加入資料庫</button><select id="kFilter" style="width:auto"><option value="">全部類型</option><option>IPO 成功</option><option>募資成功</option><option>併購成功</option><option>失敗案例</option></select></div></div>
+  <div class="tw card" style="margin-top:14px;padding:0"><table id="caseTable"></table></div>
+</section>
+
+<!-- ============ CHECKLIST ============ -->
+<section class="view" id="v-checklist">
+  <div class="eyebrow">投資標的體檢系統</div>
+  <h1>投資一家公司，需要哪些資料</h1>
+  <p class="lede">勾選已取得的資料，系統依產業顯示必備與選備項目，列出待補件清單。重點不只是公司賺多少錢，而是能否持續產生現金，以及未來還需要燒多少錢。</p>
+  <div class="row" style="margin-bottom:12px"><label for="ckInd" style="flex-direction:row;align-items:center;gap:8px">產業類型<select id="ckInd" style="width:auto"><option value="gen">一般／AI 軟體</option><option value="bio">生技醫療</option><option value="hw">半導體／硬體</option></select></label></div>
+  <div class="grid g4" id="ckKpi"></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>標準上傳清單</h3><div class="tw"><table id="ckTable"></table></div></div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><h3>財務 Agent 標準分析項目</h3><div id="finList"></div></div>
+      <div class="card"><h3>現金跑道 Cash Runway</h3><div class="form" style="margin-top:8px"><label for="cwCash">帳上現金（百萬）<input class="num" id="cwCash" type="number" value="51"></label><label for="cwBurn">每月淨燒錢（百萬）<input class="num" id="cwBurn" type="number" value="4.5"></label></div><div class="kpi" style="margin-top:10px"><span class="v" id="cwV"></span><span class="l" id="cwL"></span></div></div>
+      <div class="card stripe warn"><h3>待補件</h3><div id="ckMissing" class="md"></div><div class="row" style="margin-top:8px"><button type="button" class="ghost" id="copyMissing">複製補件清單</button></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCORE ============ -->
+<section class="view" id="v-score">
+  <div class="eyebrow">AI 投資評分系統</div>
+  <h1>100 分投資評分模型</h1>
+  <p class="lede">用同一套標準初步比較不同案件。評分不等於投資核准：重大法律、財務造假、專利權屬或臨床安全問題屬否決條件，總分再高也應暫停。</p>
+  <div class="grid g2">
+    <div class="card"><div id="scoreRows"></div><div class="row" style="margin-top:12px"><button type="button" class="ghost" id="resetScore">重設示範分數</button></div></div>
+    <div class="grid" style="align-content:start">
+      <div class="card stripe" id="scoreCard"><div class="kpi"><span class="v" id="scoreV" style="font-size:40px"></span><span class="l">投資總分</span></div><div style="margin-top:8px"><span class="pill" id="scorePill"></span></div><p id="scoreText" style="margin-top:8px"></p></div>
+      <div class="card"><h3>否決條件</h3><div id="vetoList"></div></div>
+      <div class="card"><h3>每項評分應附帶</h3><p>AI 評分、評分理由、支持證據及來源、尚缺資料、風險警示、改善建議。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section class="view" id="v-roadmap">
+  <div class="eyebrow">產品規劃</div>
+  <h1>開發藍圖與商業模式</h1>
+  <p class="lede">先以 AI＋生技醫療作為第一個垂直市場，累積專業資料庫與成功案例，再擴展到其他明星產業。</p>
+  <div class="card tw"><h3>分階段開發</h3><table>
+    <tr><th>階段</th><th>開發功能</th><th>目標</th></tr>
+    <tr><td><span class="pill">Phase 1</span></td><td>募資計畫審查＋企業估值</td><td>建立可收費服務</td></tr>
+    <tr><td><span class="pill">Phase 2</span></td><td>投資評分＋財務 DD</td><td>建立投資決策能力</td></tr>
+    <tr><td><span class="pill">Phase 3</span></td><td>生技估值＋IP＋臨床分析</td><td>建立產業差異化</td></tr>
+    <tr><td><span class="pill">Phase 4</span></td><td>IPO 路徑＋資本市場資料庫</td><td>建立 IPO 顧問服務</td></tr>
+    <tr><td><span class="pill">Phase 5</span></td><td>投資與併購配對</td><td>建立資本媒合平台</td></tr>
+  </table></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card tw"><h3>收費模式</h3><table><tr><th>服務</th><th>收費</th><th>客戶</th></tr>
+      <tr><td>AI 自助評估</td><td>單次報告／月費</td><td>新創、中小企業</td></tr>
+      <tr><td>AI＋專家顧問</td><td>專案顧問費</td><td>募資及 IPO 企業</td></tr>
+      <tr><td>資本合作服務</td><td>專案服務費</td><td>投資人、企業、併購雙方</td></tr></table>
+      <p class="note" style="margin-top:8px">媒合與收費方式須依交易性質及證券相關法規設計。</p></div>
+    <div class="card tw"><h3>正式版技術架構</h3><table>
+      <tr><td>前端</td><td>Next.js / React</td></tr><tr><td>後端</td><td>Python / FastAPI</td></tr><tr><td>資料庫</td><td>PostgreSQL</td></tr><tr><td>文件檢索</td><td>RAG＋向量資料庫</td></tr><tr><td>Agent</td><td>多 Agent 工作流程與任務編排</td></tr><tr><td>財務計算</td><td>Python 財務模型引擎</td></tr><tr><td>文件輸出</td><td>Excel、Word、PDF、PowerPoint</td></tr><tr><td>權限管理</td><td>企業資料隔離、加密、操作紀錄</td></tr></table></div>
+  </div>
+</section>
+
+<footer>本平台為分析輔助工具與產品原型。法律、會計及投資 Agent 的輸出不構成法律意見、會計簽證或投資建議；正式意見與證券相關受規範服務，應由合格專業人士提供。示範數字均為虛構。請勿上傳未經授權的企業機密文件。</footer>
+</main>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const store={get(k,d){try{const v=localStorage.getItem('aci_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('aci_'+k,JSON.stringify(v))}catch(e){}}};
+const fmt=(n,d=0)=>isFinite(n)?n.toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const pct=(n,d=1)=>isFinite(n)?(n*100).toFixed(d)+'%':'—';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const val=id=>parseFloat(document.getElementById(id).value)||0;
+
+/* ---------- routing ---------- */
+const views=['overview','committee','ipo','bp','valuation','biotech','ma','ip','industry','cases','checklist','score','roadmap'];
+function route(){const h=location.hash.slice(1);const v=views.includes(h)?h:'overview';$$('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));$$('nav.side a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));$('#side').classList.remove('open');window.scrollTo(0,0)}
+addEventListener('hashchange',route);route();
+$('#menuBtn').onclick=()=>$('#side').classList.toggle('open');
+
+/* ---------- AI ---------- */
+let ai=null;
+function disableAI(msg){$$('.ai-btn,#runCommittee').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
+function enableAI(){$$('.ai-btn,#runCommittee').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
+function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{localStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let text='';for(;;){const{done,value}=await rd.read();if(done)break;text+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text})}return{text}})()}
+(async()=>{
+  let s=null;
+  if(window.claude&&claude.use){try{s=await claude.use('sample')}catch(e){s=null}}
+  if(s){ai=(p,o)=>s(p,o);return}
+  try{const r=await fetch('/api/ai',{method:'GET'});const j=await r.json();
+    if(j.ok){ai=serverAI;if(j.needsCode){$('#codeRow').style.display='';try{$('#accessCode').value=localStorage.getItem('aci_code')||''}catch(e){}}enableAI();return}
+    disableAI('伺服器尚未設定 ANTHROPIC_API_KEY，AI 功能暫停。');return}catch(e){}
+  disableAI('此檢視無法呼叫 AI。');
+})();
+function md(t){const lines=String(t).split('\n');let h='',inList=false;for(let l of lines){const s=esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');if(/^\s*[-*•]\s+/.test(l)||/^\s*\d+[.)、]\s+/.test(l)){if(!inList){h+='<ul>';inList=true}h+='<li>'+s.replace(/^\s*([-*•]|\d+[.)、])\s+/,'')+'</li>';continue}if(inList){h+='</ul>';inList=false}if(/^#{1,4}\s/.test(l))h+='<h4>'+s.replace(/^#+\s/,'')+'</h4>';else if(s.trim()==='---'){}else if(s.trim())h+='<p>'+s+'</p>'}if(inList)h+='</ul>';return h}
+function caseText(){return `公司／專案：${$('#cName').value}\n產業：${$('#cInd').value}\n資本市場階段：${$('#cStage').value}\n委託人角色：${$('#cRole').value}\n\n公司資料：\n${$('#cDesc').value}`}
+const BASE='你是台灣「AI Capital Intelligence」投資決策平台中的專家。以繁體中文（台灣用語）回答，使用 Markdown 標題與條列，精簡具體，引用案件中的數字。資料不足時明確列出「尚缺資料」，不得捏造數據或案例；涉及法規門檻時註明需以主管機關最新規定為準。你的意見屬分析輔助，不構成正式法律、會計或投資意見。';
+async function ask(prompt,out,opts={}){out.innerHTML='<p style="color:var(--muted)">分析中…</p>';try{const r=await ai(prompt,{modelTier:opts.tier||'default',signal:opts.signal,onText:({text})=>{out.innerHTML=md(text)}});out.innerHTML=md(r.text);return r.text}catch(e){if(e&&e.name==='AbortError'||e?.code==='aborted'){out.innerHTML+='<p class="note">已停止。</p>';throw e}out.innerHTML='<p class="note">無法完成：'+esc(e?.code==='rate_limited'?'使用次數暫時達上限，請稍後再試。':e?.code==='not_granted'?'尚未允許此頁使用 Claude。':e?.code==='bad_code'?'存取碼錯誤，請在「投資決策委員會」頁輸入正確存取碼。':e?.code==='no_key'?'伺服器尚未設定 API Key。':(e?.message||'未知錯誤'))+'</p>';throw e}}
+
+/* ---------- agents ---------- */
+const AGENTS=[
+ {id:'law',name:'法律與合規 Agent',brain:'律師大腦',focus:'公司法、證券法、股權架構、投資合約條款、併購法律風險、訴訟與權利瑕疵、非營利轉營利的法律架構'},
+ {id:'acct',name:'財務與會計 Agent',brain:'會計師大腦',focus:'財報品質、營收認列、毛利、EBITDA、自由現金流、Burn Rate 與 Cash Runway、稅務、內控、財務盡職調查'},
+ {id:'ib',name:'投資銀行 Agent',brain:'投資銀行大腦',focus:'募資金額與估值合理性、Pre/Post-money、股權稀釋、IPO 路徑（興櫃、上市、上櫃、創新板）、承銷與資本結構'},
+ {id:'vc',name:'創投與投資 Agent',brain:'創投大腦',focus:'商業模式可擴展性、單位經濟、投資報酬倍數、退出機制（IPO、併購、股權轉讓）、投資條件書重點'},
+ {id:'ind',name:'產業研究 Agent',brain:'產業專家大腦',focus:'市場規模 TAM/SAM/SOM、成長率、國際與台灣競爭者、技術趨勢、進入障礙'},
+ {id:'ipc',name:'專利與臨床 Agent',brain:'專利與技術大腦',focus:'專利有效性與權利範圍、專利家族與剩餘年限、FTO、營業秘密、TRL、臨床階段與法規路徑（TFDA、FDA）'},
+ {id:'ma',name:'策略與併購 Agent',brain:'策略顧問大腦',focus:'策略合作夥伴、產業整合、併購綜效、潛在買方、商業模式升級方向'}
+];
+$('#agentChips').innerHTML=AGENTS.map(a=>`<span class="chip">${a.name}<small>${a.brain}</small></span>`).join('');
+$('#agentPick').innerHTML=AGENTS.map(a=>`<label class="chk chip" for="pk-${a.id}"><input type="checkbox" id="pk-${a.id}" checked> ${a.name}</label>`).join('');
+$('#agentCards').innerHTML=AGENTS.map(a=>`<div class="card agent" id="ag-${a.id}"><div class="hd"><h3>${a.name}</h3><span class="pill" id="agp-${a.id}">待命</span></div><p>${a.focus}</p><div class="out md" id="ago-${a.id}"></div></div>`).join('');
+$('#cFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#cDesc').value=String(r.result).slice(0,60000)};r.readAsText(f)};
+let ctrl=null,reportText='';
+$('#runCommittee').onclick=async()=>{
+  if(!ai)return;
+  const picked=AGENTS.filter(a=>$('#pk-'+a.id).checked);if(!picked.length)return;
+  ctrl=new AbortController();$('#runCommittee').disabled=true;$('#stopCommittee').disabled=false;
+  const st=$('#cStatus');st.style.display='';st.dataset.k='run';
+  AGENTS.forEach(a=>{$('#agp-'+a.id).textContent=picked.includes(a)?'排隊中':'未出席';$('#agp-'+a.id).className='pill';$('#ago-'+a.id).innerHTML=''});
+  const results=[];reportText='';
+  try{
+    for(const a of picked){
+      st.textContent=`${a.name} 分析中（${results.length+1}/${picked.length}）`;
+      $('#agp-'+a.id).textContent='分析中';$('#ag-'+a.id).scrollIntoView({block:'nearest',behavior:'smooth'});
+      const p=`${BASE}\n\n你的角色：${a.name}（${a.brain}）。專業範圍：${a.focus}。\n請只從你的專業出具意見，結構如下：\n### 關鍵發現（3–5 點）\n### 主要風險（標示 高／中／低）\n### 尚缺資料\n### 改善與加值建議\n### 本面向評分：X / 10（一句理由）\n全文約 350 字內。\n\n案件資料：\n${caseText()}`;
+      const t=await ask(p,$('#ago-'+a.id),{signal:ctrl.signal});
+      results.push({a,t});$('#agp-'+a.id).textContent='完成';$('#agp-'+a.id).className='pill good';
+    }
+    st.textContent='總控 Orchestrator 交叉驗證中';
+    $('#orchCard').style.display='';$('#orchPill').textContent='彙整中';$('#orchPill').className='pill';
+    const all=results.map(r=>`【${r.a.name}】\n${r.t}`).join('\n\n');
+    const p=`${BASE}\n\n你是總控 Orchestrator，主持 AI 投資決策委員會。以下是各專家意見，請交叉驗證（指出專家間矛盾、重複或遺漏），並產出投資決策報告：\n### 決策結論（第一行寫「評級：值得深入評估／有條件評估／需要改善／不建議」之一）\n### 投資總分：X / 100（依財務健康20、市場潛力15、技術競爭力15、團隊治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10 分項列出）\n### 否決條件檢查（法律重大問題、財務造假、專利權屬、臨床安全）\n### 投資亮點\n### 關鍵風險清單\n### 估值與募資意見（含稀釋影響）\n### 退出策略\n### 下一步行動與補件清單（依優先順序）\n\n案件資料：\n${caseText()}\n\n專家意見：\n${all}`;
+    const t=await ask(p,$('#orchOut'),{signal:ctrl.signal,tier:'complex'});
+    const m=t.match(/評級[:：]\s*(值得深入評估|有條件評估|需要改善|不建議)/);
+    const r=m?m[1]:'完成';$('#orchPill').textContent=r;
+    $('#orchPill').className='pill '+({'值得深入評估':'good','有條件評估':'warn','需要改善':'warn','不建議':'bad'}[r]||'');
+    reportText=`# ${$('#cName').value} 投資決策報告\n\n${t}\n\n---\n${all}`;
+    st.textContent='委員會完成，報告如下。';$('#orchCard').scrollIntoView({behavior:'smooth'});
+  }catch(e){st.textContent='已停止或發生錯誤，可修改資料後重新召開。'}
+  $('#runCommittee').disabled=false;$('#stopCommittee').disabled=true;
+};
+$('#stopCommittee').onclick=()=>ctrl&&ctrl.abort();
+function copy(txt,btn){navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent='已複製';setTimeout(()=>btn.textContent=o,1500)}).catch(()=>{btn.textContent='瀏覽器不允許複製'})}
+$('#copyReport').onclick=e=>copy(reportText,e.target);
+
+/* module AI buttons */
+const AI_PROMPTS={
+ ipo:()=>`${BASE}\n\n你是投資銀行 IPO 顧問。依案件資料評估：\n### 建議路徑（興櫃→上市／上櫃一般板／創新板，或非營利組織需先建立營利實體）與理由\n### 目前距離各路徑的主要缺口（獲利、資本額、股權分散、公司治理、內控、會計師與承銷商）\n### 上市前財務體質與股權結構改善建議\n### 建議時程（以季為單位）\n### 需要確認的最新法規條件\n\n${caseText()}`,
+ bp:()=>`${BASE}\n\n你是資深創投合夥人兼募資顧問。審查以下募資計畫，逐項給 1–5 分並說明：商業模式、市場規模、技術競爭力、專利 IP、臨床證據（若適用）、財務預測、募資合理性、投資亮點、投資風險。接著提出：\n### 可加入的亮點（技術、IP、商業模式、策略合作、資本市場路徑）\n### 建議改寫的 BP 段落與一句話投資故事\n### 投資人最可能追問的 8 個問題\n\n${caseText()}`,
+ ip:()=>`${BASE}\n\n你是專利師兼臨床法規顧問。使用者評估 TRL 為 ${$('#trl').value}；已完成查核：${IPCK.filter((x,i)=>ipState[i]).join('、')||'無'}；未完成：${IPCK.filter((x,i)=>!ipState[i]).join('、')}。請評估：\n### 專利組合強度與缺口（權利要求、地域、剩餘年限、營業秘密）\n### FTO 初步風險\n### 技術成熟度與競爭者比較\n### 臨床與法規路徑\n### IP 商業化與授權潛力\n### 下一步查核\n\n${caseText()}`,
+ industry:()=>`${BASE}\n\n你是產業研究主管。針對「${$('#indPick').value}」產業，建立投資研究框架：\n### 次產業與價值鏈地圖\n### 需查證的關鍵數據（全球市場規模、CAGR 等，列出建議資料來源，不要自行給確切數字）\n### 國際主要競爭者類型與台灣相關企業類型\n### 技術發展趨勢\n### 未來 3–5 年投資機會\n### 產業風險與進入障礙\n### 投資人盡職調查應問的 6 個問題`
+};
+$$('.ai-btn').forEach(b=>b.onclick=async()=>{if(!ai)return;b.disabled=true;try{await ask(AI_PROMPTS[b.dataset.ai](),$('#ai-'+b.dataset.ai))}catch(e){}b.disabled=false});
+
+/* ---------- IPO ---------- */
+const IPO={
+ emg:{t:'IPO 到興櫃',d:'公司體質診斷、興櫃資格、輔導計畫。',i:['完成公開發行（向主管機關申報）','與至少兩家證券商簽訂輔導推薦契約','財務報告經會計師查核簽證','設置獨立董事與審計委員會（依規定）','建立股務作業與股東名簿','內部控制制度設計並開始執行','股權結構與員工認股規劃完成']},
+ twse:{t:'興櫃到上市',d:'上市條件、財務改善、股權分散、內控。',i:['興櫃交易期間符合規定','設立年限與實收資本額符合上市門檻','獲利能力或市值、營收等替代條件符合','股權分散：記名股東人數與持股比例符合','內部控制制度經會計師專案審查','承銷商評估報告與輔導完成','公司治理：董事會、功能性委員會運作','無重大訴訟、關係人交易異常或同業競爭問題']},
+ tpex:{t:'興櫃到上櫃',d:'上櫃資格、財務條件、承銷商推薦。',i:['興櫃交易期間符合規定','設立年限與實收資本額符合上櫃門檻','獲利能力或替代條件（如市值、營收）符合','股權分散符合規定','兩家以上證券商書面推薦','內控制度專案審查完成','公司治理與資訊揭露制度健全']},
+ inno:{t:'創新板',d:'AI、生技、新藥及創新企業，以技術與市場價值為核心的上市路徑。',i:['具關鍵核心技術或創新經營模式','市值與營收或研發條件符合創新板規定','取得專家或機構對技術的評估意見','合格投資人交易限制的影響已評估','研發進度與資金需求揭露完整','經營團隊與技術團隊穩定','法規審查（如 TFDA、FDA）里程碑明確']},
+ profit:{t:'營利企業上市',d:'獲利能力、營收、資本額、公司治理。',i:['近年度營收成長穩定','稅前純益或 ROE 達標','資本額與淨值符合規定','公司治理架構完整','主要客戶集中度可接受','會計政策與營收認列一致']},
+ np:{t:'非營利組織商業化',d:'基金會、協會、研究機構衍生營利公司。',i:['確認組織章程與主管機關對投資營利事業的限制','設立營利子公司或衍生新創','技術授權或事業分割合約完成','IP 權屬明確移轉或授權','利益衝突與關係人交易規範','建立可投資的股權結構與治理','募資與未來資本市場路徑規劃']}
+};
+let ipoTab='emg';const ipoState=store.get('ipo',{});
+$('#ipoTabs').innerHTML=Object.entries(IPO).map(([k,v])=>`<button type="button" data-k="${k}">${v.t}</button>`).join('');
+$$('#ipoTabs button').forEach(b=>b.onclick=()=>{ipoTab=b.dataset.k;renderIpo()});
+function renderIpo(){const p=IPO[ipoTab];$$('#ipoTabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===ipoTab));$('#ipoTitle').textContent=p.t;$('#ipoDesc').textContent=p.d;const s=ipoState[ipoTab]||[];$('#ipoList').innerHTML=p.i.map((x,i)=>`<label class="chk" for="ip-${i}"><input type="checkbox" id="ip-${i}" ${s[i]?'checked':''}> ${x}</label>`).join('');$$('#ipoList input').forEach((c,i)=>c.onchange=()=>{(ipoState[ipoTab]=ipoState[ipoTab]||[])[i]=c.checked;store.set('ipo',ipoState);ipoPct()});ipoPct()}
+function ipoPct(){const s=ipoState[ipoTab]||[];const n=IPO[ipoTab].i.length,c=s.filter(Boolean).length;$('#ipoPct').textContent=`準備度 ${Math.round(c/n*100)}%`;$('#ipoBar').style.width=(c/n*100)+'%'}
+function ipoTime(){const now=+$('#ipoNow').value;const steps=[['公開發行與輔導準備',6,12],['登錄興櫃',3,6],['興櫃交易期間',6,12],['上市／上櫃申請與審查',6,9]].slice(now);let lo=0,hi=0;$('#ipoTime').innerHTML='<tr><th>階段</th><th class="num">月數</th></tr>'+steps.map(s=>{lo+=s[1];hi+=s[2];return`<tr><td>${s[0]}</td><td class="num">${s[1]}–${s[2]}</td></tr>`}).join('')+`<tr><th>合計</th><th class="num">${lo}–${hi}</th></tr>`}
+$('#ipoNow').onchange=ipoTime;renderIpo();ipoTime();
+
+/* ---------- BP self ---------- */
+const BPI=['商業模式','市場規模','技術競爭力','專利 IP','臨床證據','財務預測','募資合理性','投資亮點','投資風險揭露'];
+const bpState=store.get('bp',[4,3,4,3,2,3,3,4,2]);
+$('#bpSelf').innerHTML=BPI.map((x,i)=>`<div class="srow" style="grid-template-columns:120px 1fr 40px"><span>${x}</span><input type="range" min="1" max="5" id="bp-${i}" value="${bpState[i]}" aria-label="${x}"><span class="num" id="bpv-${i}"></span></div>`).join('');
+function bpCalc(){let t=0;BPI.forEach((x,i)=>{bpState[i]=+$('#bp-'+i).value;$('#bpv-'+i).textContent=bpState[i];t+=bpState[i]});store.set('bp',bpState);$('#bpTotal').textContent=`${t} / 45`;$('#bpBar').style.width=(t/45*100)+'%'}
+BPI.forEach((x,i)=>$('#bp-'+i).oninput=bpCalc);bpCalc();
+
+/* ---------- valuation ---------- */
+const VF=['資料蒐集','資料驗證','財務分析','同業比較','企業估值','募資規劃','投資策略','投資簡報'];
+$('#valFlow').innerHTML=VF.map((x,i)=>`<span><span class="num" style="color:var(--brass)">${i+1}</span> ${x} Agent</span>`).join('<em>→</em>');
+function tabs(container,cls){$$(container+' button').forEach(b=>b.onclick=()=>{$$(container+' button').forEach(x=>x.classList.toggle('on',x===b));$$('.'+cls).forEach(v=>v.style.display=v.id===cls+'-'+b.dataset.t?'':'none')})}
+tabs('#valTabs','vt');tabs('#bioTabs','bt');
+function dcf(W,g){const f0=val('dFcf'),g1=val('dG1')/100,g2=val('dG2')/100;let f=f0,pv=0,rows=[];for(let t=1;t<=5;t++){f*=1+(t<=3?g1:g2);const d=f/Math.pow(1+W,t);pv+=d;rows.push([t,f,d])}const tv=W>g?f*(1+g)/(W-g):NaN;const pvtv=tv/Math.pow(1+W,5);const ev=pv+pvtv;const eq=ev-val('dNd');return{rows,pv,tv,pvtv,ev,eq,ps:eq/val('dSh')}}
+function renderDcf(){const W=val('dW')/100,g=val('dTg')/100,r=dcf(W,g);$('#dKpi').innerHTML=[['企業價值 EV',fmt(r.ev)],['股權價值',fmt(r.eq)],['每股價值（元）',fmt(r.ps,1)]].map(k=>`<div class="kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');$('#dTable').innerHTML='<tr><th>年</th><th class="num">FCF</th><th class="num">折現值</th></tr>'+r.rows.map(x=>`<tr><td>第 ${x[0]} 年</td><td class="num">${fmt(x[1],1)}</td><td class="num">${fmt(x[2],1)}</td></tr>`).join('')+`<tr><td>終值（第 5 年）</td><td class="num">${fmt(r.tv,0)}</td><td class="num">${fmt(r.pvtv,0)}</td></tr><tr><td>終值佔 EV</td><td></td><td class="num">${pct(r.pvtv/r.ev)}</td></tr>`;const Ws=[-2,-1,0,1,2].map(d=>W+d/100),Gs=[-1,-.5,0,.5,1].map(d=>g+d/100);$('#dSens').innerHTML='<tr><th>WACC＼g</th>'+Gs.map(x=>`<th class="num">${(x*100).toFixed(1)}%</th>`).join('')+'</tr>'+Ws.map((w,i)=>`<tr><th class="num">${(w*100).toFixed(1)}%</th>`+Gs.map((gg,j)=>`<td class="num ${i===2&&j===2?'hl':''}">${w>gg?fmt(dcf(w,gg).ps,1):'—'}</td>`).join('')+'</tr>').join('')}
+['dFcf','dG1','dG2','dW','dTg','dNd','dSh'].forEach(id=>$('#'+id).oninput=renderDcf);renderDcf();
+
+let peers=store.get('peers',[['同業 A（示範）',28,4.2,16],['同業 B（示範）',35,6.0,22],['同業 C（示範）',22,3.1,13],['同業 D（示範）',41,7.5,25]]);
+const median=a=>{const s=a.filter(isFinite).sort((x,y)=>x-y);if(!s.length)return NaN;const m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+function renderPeers(){$('#mPeers').innerHTML='<tr><th>公司</th><th class="num">P/E</th><th class="num">P/S</th><th class="num">EV/EBITDA</th><th></th></tr>'+peers.map((p,i)=>`<tr><td><input value="${esc(p[0])}" data-i="${i}" data-j="0" aria-label="同業名稱"></td>`+[1,2,3].map(j=>`<td><input class="num" type="number" step="0.1" value="${p[j]}" data-i="${i}" data-j="${j}" aria-label="倍數" style="width:80px"></td>`).join('')+`<td><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr>`).join('');$$('#mPeers input').forEach(e=>e.oninput=()=>{peers[e.dataset.i][e.dataset.j]=e.dataset.j==='0'?e.value:parseFloat(e.value);store.set('peers',peers);renderMult()});$$('#mPeers [data-del]').forEach(b=>b.onclick=()=>{peers.splice(+b.dataset.del,1);store.set('peers',peers);renderPeers()});renderMult()}
+function renderMult(){const pe=median(peers.map(p=>p[1])),ps=median(peers.map(p=>p[2])),eb=median(peers.map(p=>p[3]));const d=1-val('mDisc')/100,nd=val('mNd');const r=[['P/E',pe,val('mNi'),pe*val('mNi')],['P/S',ps,val('mRev'),ps*val('mRev')],['EV/EBITDA',eb,val('mEb'),eb*val('mEb')-nd]];$('#mOut').innerHTML='<tr><th>方法</th><th class="num">同業中位數</th><th class="num">目標指標</th><th class="num">股權價值</th><th class="num">折價後</th></tr>'+r.map(x=>`<tr><td>${x[0]}</td><td class="num">${fmt(x[1],1)}x</td><td class="num">${fmt(x[2])}</td><td class="num">${fmt(x[3])}</td><td class="num">${fmt(x[3]*d)}</td></tr>`).join('')+`<tr><th>平均</th><td></td><td></td><th class="num">${fmt(r.reduce((s,x)=>s+x[3],0)/3)}</th><th class="num">${fmt(r.reduce((s,x)=>s+x[3],0)/3*d)}</th></tr>`}
+$('#addPeer').onclick=()=>{peers.push(['新同業',20,3,12]);store.set('peers',peers);renderPeers()};
+['mNi','mRev','mEb','mNd','mDisc'].forEach(id=>$('#'+id).oninput=renderMult);renderPeers();
+
+let holders=store.get('holders',[['創辦團隊',26],['天使與種子輪投資人',8],['A 輪投資人',4],['既有員工認股',2]]);
+function renderHolders(){$('#rHolders').innerHTML='<tr><th>股東</th><th class="num">股數（百萬）</th><th></th></tr>'+holders.map((h,i)=>`<tr><td><input value="${esc(h[0])}" data-i="${i}" data-j="0" aria-label="股東"></td><td><input class="num" type="number" step="0.1" value="${h[1]}" data-i="${i}" data-j="1" aria-label="股數" style="width:100px"></td><td><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr>`).join('')+'<tr><td colspan="3"><button type="button" class="ghost" id="addHolder">新增股東</button></td></tr>';$$('#rHolders input').forEach(e=>e.oninput=()=>{holders[e.dataset.i][e.dataset.j]=e.dataset.j==='0'?e.value:parseFloat(e.value)||0;store.set('holders',holders);$('#rSh').value=+holders.reduce((s,h)=>s+h[1],0).toFixed(3);renderRound()});$$('#rHolders [data-del]').forEach(b=>b.onclick=()=>{holders.splice(+b.dataset.del,1);store.set('holders',holders);$('#rSh').value=+holders.reduce((s,h)=>s+h[1],0).toFixed(3);renderHolders()});$('#addHolder').onclick=()=>{holders.push(['新股東',1]);store.set('holders',holders);$('#rSh').value=+holders.reduce((s,h)=>s+h[1],0).toFixed(3);renderHolders()};renderRound()}
+function renderRound(){const pre=val('rPre'),raise=val('rRaise'),sh=holders.reduce((s,h)=>s+h[1],0),pool=val('rPool')/100;const post=pre+raise;const newPct=raise/post;const total=sh/(1-newPct-pool);const poolSh=total*pool,newSh=total*newPct;const price=raise/newSh;$('#rKpi').innerHTML=[['投資後估值',fmt(post)],['新投資人持股',pct(newPct)],['每股價格（元）',fmt(price,2)]].map(k=>`<div class="kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');$('#rCap').innerHTML='<tr><th>股東</th><th class="num">增資前</th><th class="num">增資後</th><th class="num">稀釋</th></tr>'+holders.map(h=>{const b=h[1]/sh,a=h[1]/total;return`<tr><td>${esc(h[0])}</td><td class="num">${pct(b)}</td><td class="num">${pct(a)}</td><td class="num">${pct(a-b)}</td></tr>`}).join('')+`<tr><td>新增認股池</td><td class="num">—</td><td class="num">${pct(pool)}</td><td></td></tr><tr><td>本輪新投資人</td><td class="num">—</td><td class="num">${pct(newPct)}</td><td></td></tr><tr><th>總股數（百萬）</th><th class="num">${fmt(sh,2)}</th><th class="num">${fmt(total,2)}</th><th></th></tr>`}
+['rPre','rRaise','rPool'].forEach(id=>$('#'+id).oninput=renderRound);
+$('#rSh').oninput=()=>{const t=val('rSh'),s=holders.reduce((a,h)=>a+h[1],0)||1;holders=holders.map(h=>[h[0],+(h[1]*t/s).toFixed(4)]);store.set('holders',holders);renderHolders()};
+$('#rSh').value=+holders.reduce((s,h)=>s+h[1],0).toFixed(3);renderHolders();
+
+/* ---------- biotech ---------- */
+const PH=['臨床前','一期','二期','三期','查驗登記'];
+let pos=store.get('pos',[0.60,0.52,0.289,0.578,0.906]);
+const posFrom=i=>pos.slice(i).reduce((a,b)=>a*b,1);
+function renderPos(){$('#posTable').innerHTML='<tr><th>階段轉換</th><th class="num">成功率 %</th><th class="num">由此階段到上市累積機率</th></tr>'+PH.map((p,i)=>`<tr><td>${p} → ${PH[i+1]||'核准上市'}</td><td><input class="num" type="number" step="0.1" value="${(pos[i]*100).toFixed(1)}" data-i="${i}" aria-label="成功率" style="width:90px"></td><td class="num">${pct(posFrom(i))}</td></tr>`).join('');$$('#posTable input').forEach(e=>e.onchange=()=>{pos[e.dataset.i]=(parseFloat(e.value)||0)/100;store.set('pos',pos);renderPos();renderPipe()})}
+let pipe=store.get('pipe',[{n:'抗體新藥 X-101（示範）',ph:2,peak:800,m:35,yl:5,cy:10,rd:120},{n:'細胞治療 C-201（示範）',ph:1,peak:500,m:30,yl:7,cy:10,rd:90},{n:'AI 輔助診斷平台（示範）',ph:3,peak:150,m:40,yl:2,cy:8,rd:15}]);
+function assetVal(a,r){let pv=0;for(let t=1;t<=a.cy;t++){const s=a.peak*Math.min(1,t/3);pv+=s*a.m/100/Math.pow(1+r,a.yl+t)}let cost=0;const yrs=Math.max(1,a.yl);for(let t=1;t<=yrs;t++)cost+=a.rd/yrs/Math.pow(1+r,t);const p=posFrom(a.ph);return{p,npv:pv-cost,rnpv:p*pv-cost,pv,cost}}
+function renderPipe(){const r=val('bioR')/100;let tot=0,totU=0;$('#pipeTable').innerHTML='<tr><th>管線</th><th>階段</th><th class="num">高峰銷售</th><th class="num">淨利率%</th><th class="num">距上市年</th><th class="num">商業化年</th><th class="num">研發成本</th><th class="num">上市機率</th><th class="num">NPV</th><th class="num">rNPV</th><th></th></tr>'+pipe.map((a,i)=>{const v=assetVal(a,r);tot+=v.rnpv;totU+=v.npv;return`<tr><td><input value="${esc(a.n)}" data-i="${i}" data-k="n" aria-label="管線名稱" style="min-width:160px"></td><td><select data-i="${i}" data-k="ph" aria-label="階段" style="min-width:100px">${PH.map((p,j)=>`<option value="${j}" ${j==a.ph?'selected':''}>${p}</option>`).join('')}</select></td>`+['peak','m','yl','cy','rd'].map(k=>`<td><input class="num" type="number" value="${a[k]}" data-i="${i}" data-k="${k}" aria-label="${k}" style="width:68px"></td>`).join('')+`<td class="num">${pct(v.p)}</td><td class="num">${fmt(v.npv)}</td><td class="num"><b>${fmt(v.rnpv)}</b></td><td><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr>`}).join('');$$('#pipeTable input,#pipeTable select').forEach(e=>e.onchange=()=>{const a=pipe[e.dataset.i];a[e.dataset.k]=e.dataset.k==='n'?e.value:parseFloat(e.value)||0;store.set('pipe',pipe);renderPipe()});$$('#pipeTable [data-del]').forEach(b=>b.onclick=()=>{pipe.splice(+b.dataset.del,1);store.set('pipe',pipe);renderPipe()});$('#pipeKpi').innerHTML=[['管線數',pipe.length],['未風險調整 NPV 合計',fmt(totU)],['rNPV 合計',fmt(tot)],['風險折減',totU?pct(1-tot/totU):'—']].map(k=>`<div class="card kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');pipeTotal=tot;renderSotp()}
+let pipeTotal=0;
+$('#addAsset').onclick=()=>{pipe.push({n:'新管線',ph:0,peak:300,m:30,yl:8,cy:10,rd:60});store.set('pipe',pipe);renderPipe()};$('#bioR').oninput=renderPipe;
+
+let ms=store.get('ms',[['進入二期臨床',10,1,70],['進入三期臨床',30,3,35],['美國 FDA 核准',60,6,25],['年銷售達 3 億美元',40,8,20]]);
+function renderLic(){const r=val('lR')/100;$('#msTable').innerHTML='<tr><th>里程碑</th><th class="num">金額</th><th class="num">年</th><th class="num">機率%</th><th class="num">風險調整現值</th><th></th></tr>'+ms.map((m,i)=>`<tr><td><input value="${esc(m[0])}" data-i="${i}" data-j="0" aria-label="里程碑"></td>`+[1,2,3].map(j=>`<td><input class="num" type="number" value="${m[j]}" data-i="${i}" data-j="${j}" aria-label="數值" style="width:70px"></td>`).join('')+`<td class="num">${fmt(m[1]*m[3]/100/Math.pow(1+r,m[2]),1)}</td><td><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr>`).join('');$$('#msTable input').forEach(e=>e.onchange=()=>{ms[e.dataset.i][e.dataset.j]=e.dataset.j==='0'?e.value:parseFloat(e.value)||0;store.set('ms',ms);renderLic()});$$('#msTable [data-del]').forEach(b=>b.onclick=()=>{ms.splice(+b.dataset.del,1);store.set('ms',ms);renderLic()});const up=val('lUp');const msv=ms.reduce((s,m)=>s+m[1]*m[3]/100/Math.pow(1+r,m[2]),0);let roy=0;for(let t=1;t<=val('lYears');t++)roy+=val('lPeak')*Math.min(1,t/3)*val('lRoy')/100/Math.pow(1+r,val('lLaunch')+t);const royR=roy*val('lPos')/100;const tot=up+msv+royR;const nom=up+ms.reduce((s,m)=>s+m[1],0);$('#licKpi').innerHTML=[['風險調整交易價值',fmt(tot,1)],['名目總額（不含權利金）',fmt(nom)],['價值實現率',pct(tot/(nom+roy))]].map(k=>`<div class="kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');$('#licOut').innerHTML=`<tr><th>組成</th><th class="num">風險調整現值</th></tr><tr><td>簽約金</td><td class="num">${fmt(up,1)}</td></tr><tr><td>里程碑金</td><td class="num">${fmt(msv,1)}</td></tr><tr><td>權利金（未調整 ${fmt(roy,1)}）</td><td class="num">${fmt(royR,1)}</td></tr><tr><th>合計</th><th class="num">${fmt(tot,1)}</th></tr>`}
+$('#addMs').onclick=()=>{ms.push(['新里程碑',10,2,50]);store.set('ms',ms);renderLic()};['lUp','lRoy','lPeak','lLaunch','lYears','lPos','lR'].forEach(id=>$('#'+id).oninput=renderLic);
+
+let segs=store.get('segs',[['醫材事業（示範，倍數法）',70],['技術平台授權（示範）',40]]);
+function renderSotp(){$('#sotpTable').innerHTML='<tr><th>分部</th><th class="num">價值</th><th></th></tr>'+`<tr><td>研發管線 rNPV 合計（自動）</td><td class="num">${fmt(pipeTotal,1)}</td><td></td></tr>`+segs.map((s,i)=>`<tr><td><input value="${esc(s[0])}" data-i="${i}" data-j="0" aria-label="分部"></td><td><input class="num" type="number" value="${s[1]}" data-i="${i}" data-j="1" aria-label="價值" style="width:90px"></td><td><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr>`).join('');$$('#sotpTable input').forEach(e=>e.onchange=()=>{segs[e.dataset.i][e.dataset.j]=e.dataset.j==='0'?e.value:parseFloat(e.value)||0;store.set('segs',segs);renderSotp()});$$('#sotpTable [data-del]').forEach(b=>b.onclick=()=>{segs.splice(+b.dataset.del,1);store.set('segs',segs);renderSotp()});const gross=pipeTotal+segs.reduce((s,x)=>s+x[1],0);const eq=gross*(1-val('sDup')/100)-val('sHq')+val('sCash');$('#sotpKpi').innerHTML=[['分部合計',fmt(gross,1)],['股權價值',fmt(eq,1)],['每股價值（美元）',fmt(eq/val('sSh'),2)]].map(k=>`<div class="kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('')}
+$('#addSeg').onclick=()=>{segs.push(['新分部',20]);store.set('segs',segs);renderSotp()};['sHq','sCash','sDup','sSh'].forEach(id=>$('#'+id).oninput=renderSotp);
+renderPos();renderPipe();renderLic();
+
+/* ---------- M&A ---------- */
+const MAA=[['M&A Target Finder','尋找併購標的，依產業、技術、規模與估值篩選'],['Due Diligence Agent','財務、法律、稅務、技術 DD'],['Synergy Agent','評估營收綜效與成本綜效'],['Deal Structuring Agent','股權、現金、換股、分期付款、Earn-out'],['Post-Merger Integration Agent','併購後組織、系統、文化與客戶整合']];
+$('#maAgents').innerHTML=MAA.map(a=>`<div class="card"><h3>${a[0]}</h3><p>${a[1]}</p></div>`).join('');
+function renderSyn(){const r=val('syR')/100,tax=val('syTax')/100,ramp=Math.max(1,val('syRamp'));const annual=(val('syRev')*val('syMg')/100+val('syCost'))*(1-tax);let pv=0;for(let t=1;t<=ramp;t++)pv+=annual*t/ramp/Math.pow(1+r,t);const g=0.02;pv+=annual*(1+g)/(r-g)/Math.pow(1+r,ramp);const net=pv-val('syInt');const prem=val('syOf')-val('sySt');const vc=net-prem;$('#syKpi').innerHTML=[['綜效淨現值',fmt(net)],['支付溢價',fmt(prem)],['買方創造價值',fmt(vc)]].map(k=>`<div class="card kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');const v=$('#syVerdict');v.className='card stripe '+(vc>0?(prem/net<0.7?'good':'warn'):'bad');v.innerHTML=`<h3>${vc>0?'綜效足以支撐溢價':'溢價高於綜效價值'}</h3><p>溢價佔綜效現值 ${pct(prem/net,0)}。${vc>0?'實務上綜效常無法全額實現，溢價越低於綜效現值，安全邊際越大。':'除非有未量化的策略價值，否則買方價值會被稀釋；可考慮降低價格、改用 Earn-out 或換股分攤風險。'}</p><p style="font-size:12px">綜效於第 ${ramp} 年全面實現後，以 2% 永續成長計算終值。</p>`}
+['sySt','syOf','syRev','syMg','syCost','syRamp','syInt','syTax','syR'].forEach(id=>$('#'+id).oninput=renderSyn);renderSyn();
+
+/* ---------- IP ---------- */
+const TRL=['基本原理被觀察與報告','技術概念與應用形成','關鍵功能概念驗證','實驗室環境元件驗證','相關環境元件驗證','相關環境系統原型展示','實際環境系統原型展示','系統完成並通過驗證','實際系統經營運驗證'];
+function renderTrl(){const v=+$('#trl').value;$('#trlV').textContent=v;$('#trlDesc').textContent=TRL[v-1];const p=$('#trlPill');p.textContent=v<=3?'研究階段':v<=6?'開發驗證階段':'商業化階段';p.className='pill '+(v<=3?'bad':v<=6?'warn':'good');store.set('trl',v)}
+$('#trl').value=store.get('trl',6);$('#trl').oninput=renderTrl;renderTrl();
+const IPCK=['專利檢索及專利家族分析','權利要求範圍與法律狀態','專利剩餘年限','地域布局（台、美、歐、中、日）','FTO 自由實施初步分析','營業秘密管理制度','技術競爭者比較','臨床試驗登錄與結果分析','法規路徑與里程碑','技術授權及產學合作案例','專利與產品技術對應','IP 權屬（發明人、雇傭、產學合約）'];
+const ipState=store.get('ipck',[1,1,0,0,0,1,1,0,1,0,0,0]);
+function renderIp(){$('#ipList').innerHTML=IPCK.map((x,i)=>`<label class="chk" for="ipc-${i}"><input type="checkbox" id="ipc-${i}" ${ipState[i]?'checked':''}> ${x}</label>`).join('');$$('#ipList input').forEach((c,i)=>c.onchange=()=>{ipState[i]=c.checked?1:0;store.set('ipck',ipState);ipPct()});ipPct()}
+function ipPct(){const c=ipState.filter(Boolean).length;$('#ipPct').textContent=`${c} / ${IPCK.length}`;$('#ipBar').style.width=(c/IPCK.length*100)+'%'}
+renderIp();
+
+/* ---------- industry ---------- */
+const IND=[['AI','Agent、企業 AI、機器人、AI 醫療'],['生技醫療','新藥、細胞治療、外泌體、精準醫療'],['醫療科技','醫療影像、醫療器材、數位健康'],['半導體','AI 晶片、先進封裝、設備材料'],['能源','儲能、氫能、能源管理'],['長壽科技','抗老化、再生醫學、健康管理'],['國防科技','無人機、感測器、資安'],['機器人','工業機器人、人形機器人、自動化']];
+$('#indTable').innerHTML='<tr><th>產業</th><th>研究重點</th><th>追蹤面向</th></tr>'+IND.map(x=>`<tr><td><b>${x[0]}</b></td><td>${x[1]}</td><td style="color:var(--muted);font-size:13px">全球市場規模、CAGR、國際競爭者、台灣相關企業、近期投資及併購、技術趨勢、3–5 年機會、風險與進入障礙</td></tr>`).join('');
+$('#indPick').innerHTML=IND.map(x=>`<option>${x[0]}</option>`).join('');
+
+/* ---------- cases ---------- */
+let cases=store.get('cases',[{t:'募資成功',co:'示範格式：某 AI 醫療新創',ind:'AI 醫療',d:'2025-06-30',v:'A 輪投資前估值 8 億元（交易當時）',s:'公司公告／新聞稿網址',l:'以醫院導入數與續約率證明需求；引進醫材通路商為策略投資人'},{t:'失敗案例',co:'示範格式：某新藥公司',ind:'生技新藥',d:'2024-03-15',v:'二期失敗後市值下跌（記錄事件前後時點）',s:'公開資訊觀測站重大訊息',l:'單一管線集中風險；未預留下一輪資金，現金跑道不足 12 個月'}]);
+function renderCases(){const f=$('#kFilter').value;const list=cases.map((c,i)=>[c,i]).filter(([c])=>!f||c.t===f);$('#caseTable').innerHTML='<tr><th>類型</th><th>公司</th><th>產業</th><th>日期</th><th>估值／金額與時點</th><th>來源</th><th>條件與教訓</th><th></th></tr>'+(list.length?list.map(([c,i])=>`<tr><td><span class="pill ${c.t==='失敗案例'?'bad':'good'}">${esc(c.t)}</span></td><td>${esc(c.co)}</td><td>${esc(c.ind)}</td><td class="num">${esc(c.d)}</td><td>${esc(c.v)}</td><td>${esc(c.s)}</td><td>${esc(c.l)}</td><td><button type="button" class="ghost" data-del="${i}" aria-label="刪除">×</button></td></tr>`).join(''):'<tr><td colspan="8" style="color:var(--muted)">沒有符合的案例。</td></tr>');$$('#caseTable [data-del]').forEach(b=>b.onclick=()=>{cases.splice(+b.dataset.del,1);store.set('cases',cases);renderCases()})}
+$('#addCase').onclick=()=>{const c={t:$('#kType').value,co:$('#kCo').value.trim(),ind:$('#kInd').value,d:$('#kDate').value,v:$('#kVal').value,s:$('#kSrc').value,l:$('#kLesson').value};if(!c.co){$('#kCo').focus();return}if(!c.d||!c.s){(!c.d?$('#kDate'):$('#kSrc')).focus();return}cases.unshift(c);store.set('cases',cases);['kCo','kInd','kDate','kVal','kSrc','kLesson'].forEach(id=>$('#'+id).value='');renderCases()};
+$('#kFilter').onchange=renderCases;renderCases();
+
+/* ---------- checklist ---------- */
+const CK=[['公司基本資料','公司簡介、股權結構、董監事、關係企業','all'],['財務資料','近 3–5 年財報、近 12–24 個月月報','all'],['營運資料','營收明細、客戶、產品、訂單、毛利','all'],['市場資料','TAM、SAM、SOM、競爭對手、市占率','all'],['技術資料','技術規格、研發進度、技術壁壘','all'],['法律資料','訴訟、合約、股權爭議、重大法律風險','all'],['專利資料','專利清單、權利人、授權、專利狀態','bio,hw'],['臨床資料','臨床設計、試驗結果、法規進度','bio'],['人才資料','核心團隊、研發主管、關鍵人才','all'],['募資資料','歷次增資、投資人、估值、資金用途','all'],['未來預測','3–5 年營收、成本、資本支出、現金流','all'],['退出規劃','IPO、併購、股權轉讓','all']];
+const ckState=store.get('ck',[1,1,1,0,1,0,1,0,1,1,0,0]);
+function renderCk(){const ind=$('#ckInd').value;let req=0,have=0,miss=[];$('#ckTable').innerHTML='<tr><th></th><th>類別</th><th>內容</th><th>重要性</th></tr>'+CK.map((c,i)=>{const must=c[2]==='all'||c[2].split(',').includes(ind);if(must){req++;if(ckState[i])have++;else miss.push(c)}return`<tr><td><input type="checkbox" id="ck-${i}" ${ckState[i]?'checked':''} aria-label="${c[0]}"></td><td><label for="ck-${i}" style="color:var(--text);font-size:14px">${c[0]}</label></td><td style="color:var(--muted)">${c[1]}</td><td><span class="pill ${must?'':'good'}">${must?'必備':'選備'}</span></td></tr>`}).join('');$$('#ckTable input').forEach((c,i)=>c.onchange=()=>{ckState[i]=c.checked?1:0;store.set('ck',ckState);renderCk()});$('#ckKpi').innerHTML=[['必備資料完成',`${have} / ${req}`],['待補件',miss.length],['資料完整度',pct(have/req,0)],['可進入評估',have/req>=0.8?'是':'尚未']].map(k=>`<div class="card kpi"><span class="v">${k[1]}</span><span class="l">${k[0]}</span></div>`).join('');$('#ckMissing').innerHTML=miss.length?'<ul>'+miss.map(m=>`<li><b>${m[0]}</b>：${m[1]}</li>`).join('')+'</ul>':'<p>必備資料已齊全。</p>';missText=miss.map(m=>`□ ${m[0]}：${m[1]}`).join('\n')}
+let missText='';$('#ckInd').onchange=renderCk;$('#copyMissing').onclick=e=>copy('投資評估補件清單\n'+missText,e.target);renderCk();
+const FIN=['損益表：營收、毛利、營業利益、稅後淨利','資產負債表：現金、應收帳款、存貨、負債、淨值','現金流量表：營業、投資、籌資現金流','EBITDA 與 EBITDA Margin','營運資金及每月 Burn Rate','Cash Runway','應收帳款帳齡與呆帳','關係人交易','或有負債與表外承諾','歷次增資及股權稀釋'];
+$('#finList').innerHTML='<div class="md"><ul>'+FIN.map(f=>`<li>${f}</li>`).join('')+'</ul></div>';
+function runway(){const m=val('cwCash')/val('cwBurn');$('#cwV').textContent=isFinite(m)&&m>0?m.toFixed(1)+' 個月':'—';$('#cwL').textContent=m<12?'低於 12 個月：本輪募資急迫，議價能力下降':m<18?'12–18 個月：應開始啟動下一輪募資':'18 個月以上：資金相對充裕';$('#cwL').style.color=m<12?'var(--bad)':m<18?'var(--warn)':'var(--good)'}
+['cwCash','cwBurn'].forEach(id=>$('#'+id).oninput=runway);runway();
+
+/* ---------- score ---------- */
+const SC=[['財務健康',20,15,'現金流、負債、營收品質、獲利能力'],['市場潛力',15,12,'市場規模、成長率、客戶需求'],['技術競爭力',15,12,'技術壁壘、專利、替代難度'],['團隊與治理',10,8,'經營團隊、公司治理、執行能力'],['商業模式',10,8,'獲利模式、客戶黏著度、可擴展性'],['估值合理性',10,7,'同業倍數、DCF、交易比較'],['募資與退出',10,7,'資金需求、股權結構、退出可能性'],['法律與產業風險',10,8,'法規、訴訟、技術及市場風險']];
+const VETO=['重大法律問題或訴訟','財務造假或重大會計疑慮','專利權屬不明或爭議','臨床安全問題'];
+let sc=store.get('score',SC.map(s=>s[2])),veto=store.get('veto',[0,0,0,0]);
+function renderScoreRows(){$('#scoreRows').innerHTML=SC.map((s,i)=>`<div class="srow"><span>${s[0]}<small>${s[3]}</small></span><input type="range" min="0" max="${s[1]}" value="${sc[i]}" id="sc-${i}" aria-label="${s[0]}"><span class="num" id="scv-${i}"></span></div>`).join('');$$('#scoreRows input').forEach((e,i)=>e.oninput=()=>{sc[i]=+e.value;calcScore()});$('#vetoList').innerHTML=VETO.map((v,i)=>`<label class="chk" for="vt-${i}"><input type="checkbox" id="vt-${i}" ${veto[i]?'checked':''}> ${v}</label>`).join('');$$('#vetoList input').forEach((e,i)=>e.onchange=()=>{veto[i]=e.checked?1:0;calcScore()});calcScore()}
+function calcScore(){store.set('score',sc);store.set('veto',veto);let t=0;SC.forEach((s,i)=>{t+=sc[i];$('#scv-'+i).textContent=`${sc[i]} / ${s[1]}`});$('#scoreV').textContent=t+' / 100';const vt=veto.some(Boolean);let r,c,txt;if(vt){r='否決';c='bad';txt='觸發否決條件：先釐清問題，總分暫不採用。'}else if(t>=80){r='值得深入評估';c='good';txt='進入投資條件設計、完整 DD 與投資簡報。'}else if(t>=65){r='有條件評估';c='warn';txt='補齊尚缺資料、針對低分項目設定投資前提或保護條款。'}else if(t>=50){r='需要改善';c='warn';txt='建議先執行企業改善與募資計畫調整，再重新評估。'}else{r='不建議';c='bad';txt='產出風險報告與暫緩建議。'}$('#scorePill').textContent=r;$('#scorePill').className='pill '+c;$('#scoreText').textContent=txt;$('#scoreCard').className='card stripe '+c}
+$('#resetScore').onclick=()=>{sc=SC.map(s=>s[2]);veto=[0,0,0,0];renderScoreRows()};renderScoreRows();
+})();
+</script>
+</body>
+</html>
