@@ -135,6 +135,8 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 .drop b{color:var(--ink);font-size:15px}.drop span{font-size:13px;color:var(--muted)}
 .drop:hover,.drop.over{border-color:var(--brass);background:var(--brass-soft)}
 .drop{position:relative}.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.stagehd{grid-column:1/-1;display:flex;gap:10px;align-items:baseline;font-size:14px;color:var(--muted);padding:6px 2px 0}.stagehd b{font-family:var(--display);font-size:16px;color:var(--ink)}
+.agent.stage2{border-color:var(--brass);background:linear-gradient(var(--brass-soft),var(--card) 90px)}
 .agdrop{padding:12px;margin-top:2px}.agdrop b{font-size:13.5px}.agdrop span{font-size:12px}
 .agfiles{display:flex;flex-wrap:wrap;gap:6px}.agfiles:empty{display:none}.agfiles .chip{display:inline-flex;align-items:center;gap:4px}.agfiles .chip small{display:inline}.agst{font-size:12.5px;color:var(--muted)}
 #finTable input{width:92px;text-align:right}
@@ -198,7 +200,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
       </div>
     </div>
     <div class="arrow">▼ 由專家 Agent 執行與交叉檢查</div>
-    <div class="layer"><b>七大專家 AI Agent</b>
+    <div class="layer"><b>七大專家 AI Agent＋第二階段：資本市場策略、券商／VC／IB 觀點</b>
       <div class="chips" id="agentChips"></div>
     </div>
     <div class="arrow">▲ 讀取</div>
@@ -597,10 +599,10 @@ function md(t){const lines=String(t).split('\n');let h='',inList=false;for(let l
 function caseHeader(d){let t=`公司／專案：${d.name}\n產業：${d.ind}\n資本市場階段：${d.stage}\n委託人角色：${d.role}\n\n公司說明：\n${d.desc}`;const ft=finText(d);if(ft)t+=`\n\n財務數據（新台幣百萬元）：\n${ft}`;return t}
 function docBlock(files,limit){let budget=limit;const docs=files.map(f=>{const take=f.text.slice(0,Math.max(0,budget));budget-=take.length;return take?`【文件：${f.name}｜${f.cat}${take.length<f.text.length?'｜已截斷':''}】\n${take}`:''}).filter(Boolean);return docs.length?`\n\n上傳文件內容：\n${docs.join('\n\n')}`:''}
 function caseText(limit=CASE_DOC_LIMIT,filter=null){const d=cur();const files=filter?d.files.filter(filter):d.files;return caseHeader(d)+docBlock(files,limit)}
-const ROUTE={law:['公司基本資料','法律資料','募資資料','專利資料','退出規劃'],acct:['財務資料','營運資料','未來預測','募資資料','公司基本資料'],ib:['財務資料','募資資料','公司基本資料','未來預測','退出規劃'],vc:['募資資料','營運資料','市場資料','未來預測','退出規劃','人才資料','財務資料'],ind:['市場資料','技術資料','營運資料','募資資料'],ipc:['專利資料','臨床資料','技術資料','法律資料'],ma:['募資資料','市場資料','營運資料','退出規劃','公司基本資料','財務資料']};
+const ROUTE={cms:['募資資料','財務資料','公司基本資料','市場資料','退出規劃','未來預測'],pov:['募資資料','財務資料','公司基本資料','市場資料','退出規劃','未來預測','技術資料'],law:['公司基本資料','法律資料','募資資料','專利資料','退出規劃'],acct:['財務資料','營運資料','未來預測','募資資料','公司基本資料'],ib:['財務資料','募資資料','公司基本資料','未來預測','退出規劃'],vc:['募資資料','營運資料','市場資料','未來預測','退出規劃','人才資料','財務資料'],ind:['市場資料','技術資料','營運資料','募資資料'],ipc:['專利資料','臨床資料','技術資料','法律資料'],ma:['募資資料','市場資料','營運資料','退出規劃','公司基本資料','財務資料']};
 const routeFilter=a=>f=>f.cat==='其他'||ROUTE[a.id].includes(f.cat);
 function hash(str){let h=0x811c9dc5;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,0x01000193)}return (h>>>0).toString(36)+'.'+str.length.toString(36)}
-const PROMPT_VER='v2';
+const PROMPT_VER='v3';
 const BASE='你是台灣「AI Capital Intelligence」投資決策平台中的專家。以繁體中文（台灣用語）回答，使用 Markdown 標題與條列，精簡具體，引用案件中的數字。資料不足時明確列出「尚缺資料」，不得捏造數據或案例；涉及法規門檻時註明需以主管機關最新規定為準。你的意見屬分析輔助，不構成正式法律、會計或投資意見。';
 async function ask(prompt,out,opts={}){out.innerHTML='<p style="color:var(--muted)">分析中…</p>';try{const r=await ai(prompt,{modelTier:opts.tier||'default',signal:opts.signal,system:opts.system,context:opts.context,cache:opts.cache,onText:({text})=>{out.innerHTML=md(text)}});out.innerHTML=md(r.text);return r.text}catch(e){if(e&&e.name==='AbortError'||e?.code==='aborted'){out.innerHTML+='<p class="note">已停止。</p>';throw e}out.innerHTML='<p class="note">無法完成：'+esc(e?.code==='rate_limited'?'使用次數暫時達上限，請稍後再試。':e?.code==='not_granted'?'尚未允許此頁使用 Claude。':e?.code==='bad_code'?'存取碼錯誤，請在「投資決策委員會」頁輸入正確存取碼。':e?.code==='no_key'?'伺服器尚未設定 API Key。':(e?.message||'未知錯誤'))+'</p>';throw e}}
 
@@ -613,18 +615,30 @@ const AGENTS=[
  {id:'ind',docs:'市場研究報告、競爭者資料、產業統計',name:'產業研究 Agent',brain:'產業專家大腦',focus:'市場規模 TAM/SAM/SOM、成長率、國際與台灣競爭者、技術趨勢、進入障礙'},
  {id:'ipc',docs:'專利證書與清單、FTO 報告、臨床試驗報告、法規文件',name:'專利與臨床 Agent',brain:'專利與技術大腦',focus:'專利有效性與權利範圍、專利家族與剩餘年限、FTO、營業秘密、TRL、臨床階段與法規路徑（TFDA、FDA）'},
  {id:'ma',docs:'合作備忘錄、策略計畫、潛在併購標的資料',name:'策略與併購 Agent',brain:'策略顧問大腦',focus:'策略合作夥伴、產業整合、併購綜效、潛在買方、商業模式升級方向'}
+ ,{id:'cms',stage:2,docs:'上市櫃規劃書、承銷商建議書、同業上市資料',name:'資本市場策略 Agent',brain:'資本市場策略大腦',focus:'依七位專家意見設計資本市場路徑（興櫃、上市、上櫃、創新板、海外上市、併購退出），並對照同類型公司的成功與失敗案例'}
+ ,{id:'pov',stage:2,docs:'承銷商、創投或投資銀行的意見書與訪談紀錄',name:'券商／VC／IB 觀點 Agent',brain:'市場觀點大腦',focus:'模擬承銷商與券商、創投（VC）、投資銀行（IB）三方對本案的看法、疑慮、評價區間與投資條件'}
 ];
 $('#agentChips').innerHTML=AGENTS.map(a=>`<span class="chip">${a.name}<small>${a.brain}</small></span>`).join('');
-$('#agentPick').innerHTML=AGENTS.map(a=>`<label class="chk chip" for="pk-${a.id}"><input type="checkbox" id="pk-${a.id}" checked> ${a.name}</label>`).join('');
-$('#agentCards').innerHTML=AGENTS.map(a=>`<div class="card agent" id="ag-${a.id}"><div class="hd"><h3>${a.name}</h3><span class="pill" id="agp-${a.id}">待命</span></div><p>${a.focus}</p>
+$('#agentPick').innerHTML=AGENTS.map(a=>`<label class="chk chip" for="pk-${a.id}"><input type="checkbox" id="pk-${a.id}" checked> ${a.name}${a.stage===2?'<small style="display:inline">（第二階段）</small>':''}</label>`).join('');
+$('#agentCards').innerHTML=AGENTS.map((a,i)=>`${i===0?'<div class="stagehd"><b>第一階段</b>七大專家分析</div>':''}${a.stage===2&&AGENTS[i-1].stage!==2?'<div class="stagehd"><b>第二階段</b>資本市場策略與券商／VC／IB 觀點（讀取第一階段專家意見，於總結分析前執行）</div>':''}<div class="card agent${a.stage===2?' stage2':''}" id="ag-${a.id}"><div class="hd"><h3>${a.name}</h3><span class="pill" id="agp-${a.id}">待命</span></div><p>${a.focus}</p>
 <label for="af-${a.id}" class="drop agdrop" id="agd-${a.id}"><b>上傳此 Agent 專屬文件</b><span>建議：${a.docs}</span><input type="file" id="af-${a.id}" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json"></label>
 <div class="agst" id="agr-${a.id}"></div><div class="agfiles" id="afl-${a.id}"></div><div class="row"><button type="button" class="ghost ag-run" data-run="${a.id}" disabled>單獨分析</button><span class="agst" id="ags-${a.id}"></span></div>
 <div class="out md" id="ago-${a.id}"></div></div>`).join('');
 function ownDocs(a){const d=cur();const own=((d.agentFiles||{})[a.id])||[];let budget=AGENT_DOC_LIMIT;return own.map(f=>{const t=f.text.slice(0,Math.max(0,budget));budget-=t.length;return t?`【專屬文件：${f.name}${t.length<f.text.length?'｜已截斷':''}】\n${t}`:''}).filter(Boolean)}
-function agentFp(a){return hash(PROMPT_VER+a.id+caseText(CASE_DOC_LIMIT,routeFilter(a))+ownDocs(a).join('\n'))}
+const S1=()=>AGENTS.filter(a=>a.stage!==2);
+function expertOpinions(){return S1().filter(a=>agentResults[a.id]).map(a=>`【${a.name}】\n${agentResults[a.id]}`).join('\n\n')}
+function agentFp(a){return hash(PROMPT_VER+a.id+caseText(CASE_DOC_LIMIT,routeFilter(a))+ownDocs(a).join('\n')+(a.stage===2?expertOpinions():''))}
+const CASE_RULE='案例只列你有把握、可公開查證的真實公司與事件，註明市場、大約年份與資料性質（例如公開說明書、新聞報導）；不確定時改寫成「案例類型」描述，不得捏造公司名稱、數字或結果。每個案例末尾標註「（請查證）」。你的知識有截止時間，近期案例可能缺漏。';
+const STAGE2={
+ cms:`### 建議資本市場路徑（興櫃→上櫃／上市、創新板、海外上市或併購退出；說明理由與時程，以季為單位）\n### 同類型成功案例（2–3 個：公司、市場、時間、關鍵成功做法、對本案的啟示）\n### 同類型失敗或受挫案例（2–3 個：發生了什麼、主要原因、本案如何避免）\n### 上市前必須完成的關鍵里程碑（依優先順序）\n### 本面向評分：X / 10（一句理由）\n${CASE_RULE}\n全文約 500 字內。`,
+ pov:`### 承銷商／券商觀點（可承銷性、市場胃納、可能的評價區間與方法、主要疑慮、會要求補強的事項）\n### 創投（VC）觀點（投資論點、願意投資的條件與條款、預期報酬倍數與退出期間、紅旗）\n### 投資銀行（IB）觀點（交易結構、策略投資人或併購買方類型、估值方法、資本結構建議）\n### 三方共識與分歧\n### 本面向評分：X / 10（一句理由）\n三方觀點為依專業慣例模擬，非真實機構意見；評價區間須依據案件數字推算並說明假設，數字不足時寫「無法估算」。全文約 500 字內。`
+};
 function agentPrompt(a,mode){const docs=ownDocs(a);const shared=mode==='committee'&&CACHE_OK;
   const context=`案件資料：\n${shared?caseText():caseText(CASE_DOC_LIMIT,routeFilter(a))}`;
-  const prompt=`你的角色：${a.name}（${a.brain}）。專業範圍：${a.focus}。\n請只從你的專業出具意見${docs.length?'，並優先依據提供給你的專屬文件（引用時註明文件名稱）':''}，結構如下：\n### 關鍵發現（3–5 點）\n### 主要風險（標示 高／中／低）\n### 尚缺資料\n### 改善與加值建議\n### 本面向評分：X / 10（一句理由）\n全文約 350 字內。${docs.length?'\n\n提供給你的專屬文件：\n'+docs.join('\n\n'):''}`;
+  const ex=a.stage===2?expertOpinions():'';
+  const prompt=a.stage===2
+   ?`你的角色：${a.name}（${a.brain}）。任務：${a.focus}。\n${ex?'請以下方第一階段七位專家的意見為基礎（可引用、補充或反駁），':'目前尚無第一階段專家意見，請直接依案件資料，'}${docs.length?'並優先依據提供給你的專屬文件，':''}依下列結構出具意見：\n${STAGE2[a.id]}${ex?'\n\n第一階段專家意見：\n'+ex:''}${docs.length?'\n\n提供給你的專屬文件：\n'+docs.join('\n\n'):''}`
+   :`你的角色：${a.name}（${a.brain}）。專業範圍：${a.focus}。\n請只從你的專業出具意見${docs.length?'，並優先依據提供給你的專屬文件（引用時註明文件名稱）':''}，結構如下：\n### 關鍵發現（3–5 點）\n### 主要風險（標示 高／中／低）\n### 尚缺資料\n### 改善與加值建議\n### 本面向評分：X / 10（一句理由）\n全文約 350 字內。${docs.length?'\n\n提供給你的專屬文件：\n'+docs.join('\n\n'):''}`;
   return{system:BASE,context,prompt}}
 const agentResults={};
 function setPill(a,txt,cls){$('#agp-'+a.id).textContent=txt;$('#agp-'+a.id).className='pill'+(cls?' '+cls:'')}
@@ -664,7 +678,7 @@ async function runOrchestrator(signal,list=null,force=false){
   if(!force&&d.orch&&d.orch.fp===fp&&d.orch.text){renderResults();return{text:d.orch.text,reused:true}}
   $('#orchCard').style.display='';$('#orchPill').textContent='彙整中';$('#orchPill').className='pill';
   const all=done.map(a=>`【${a.name}】\n${agentResults[a.id]}`).join('\n\n');
-  const p=`你是總控 Orchestrator，主持 AI 投資決策委員會。以下是各專家意見，請交叉驗證（指出專家間矛盾、重複或遺漏），並產出投資決策報告：\n### 決策結論（第一行寫「評級：值得深入評估／有條件評估／需要改善／不建議」之一）\n### 投資總分：X / 100（依財務健康20、市場潛力15、技術競爭力15、團隊治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10 分項列出）\n### 否決條件檢查（法律重大問題、財務造假、專利權屬、臨床安全）\n### 投資亮點\n### 關鍵風險清單\n### 估值與募資意見（含稀釋影響）\n### 退出策略\n### 下一步行動與補件清單（依優先順序）\n\n專家意見：\n${all}`;
+  const p=`你是總控 Orchestrator，主持 AI 投資決策委員會。以下是各專家意見，請交叉驗證（指出專家間矛盾、重複或遺漏），並產出投資決策報告：\n### 決策結論（第一行寫「評級：值得深入評估／有條件評估／需要改善／不建議」之一）\n### 投資總分：X / 100（依財務健康20、市場潛力15、技術競爭力15、團隊治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10 分項列出）\n### 否決條件檢查（法律重大問題、財務造假、專利權屬、臨床安全）\n### 投資亮點\n### 關鍵風險清單\n### 估值與募資意見（含稀釋影響）\n### 資本市場策略（整合第二階段：建議路徑、成功與失敗案例的啟示）\n### 券商／VC／IB 看法綜合（共識、分歧、對評級的影響）\n### 退出策略\n### 下一步行動與補件清單（依優先順序）\n\n專家意見（含第二階段資本市場策略與券商／VC／IB 觀點）：\n${all}`;
   const t=await ask(p,$('#orchOut'),{signal,tier:'complex',system:BASE,context:`案件資料（文件節錄，完整內容已由各專家閱讀）：\n${caseText(ORCH_DOC_LIMIT)}`,cache:false});
   const m=t.match(/評級[:：]\s*(值得深入評估|有條件評估|需要改善|不建議)/);
   const r=m?m[1]:'完成';$('#orchPill').textContent=r;
@@ -876,7 +890,8 @@ async function loadPpt(){if(window.PptxGenJS)return;let last;for(const u of PPT_
 function parseJSON(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');return JSON.parse(t.slice(a,b+1))}
 async function reportJSON(list){const d=cur();const done=list||AGENTS.filter(a=>agentResults[a.id]);
   const prompt=`將以下投資決策委員會的分析整理成簡報內容。只回傳一個 JSON 物件，不要任何其他文字。使用繁體中文（台灣用語）。每個條列 40 字以內，每個陣列最多 6 項，不得新增原文沒有的數字或事實。
-格式：{"rating":"值得深入評估|有條件評估|需要改善|不建議","score":0-100 的整數或 null,"summary":"三句以內的結論","scoreBreakdown":[{"item":"財務健康","score":數字,"max":20}，依財務健康20、市場潛力15、技術競爭力15、團隊與治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10],"veto":[{"item":"重大法律問題","status":"通過|疑慮|未知","note":"短說明"}，共四項：重大法律問題、財務造假疑慮、專利權屬、臨床安全],"highlights":[""],"risks":[{"level":"高|中|低","risk":"","mitigation":""}],"valuation":[""],"exit":[""],"nextSteps":[""],"missing":[""],"agents":[{"name":"Agent 名稱","score":"X / 10","points":["最多 3 點"]}]}
+格式：{"rating":"值得深入評估|有條件評估|需要改善|不建議","score":0-100 的整數或 null,"summary":"三句以內的結論","scoreBreakdown":[{"item":"財務健康","score":數字,"max":20}，依財務健康20、市場潛力15、技術競爭力15、團隊與治理10、商業模式10、估值合理性10、募資與退出10、法律與產業風險10],"veto":[{"item":"重大法律問題","status":"通過|疑慮|未知","note":"短說明"}，共四項：重大法律問題、財務造假疑慮、專利權屬、臨床安全],"highlights":[""],"risks":[{"level":"高|中|低","risk":"","mitigation":""}],"valuation":[""],"exit":[""],"nextSteps":[""],"missing":[""],"capitalStrategy":{"path":"建議路徑與時程，60 字內","success":[{"case":"公司或案例類型（含市場、年份）","lesson":"關鍵做法或啟示"}],"failure":[{"case":"公司或案例類型","lesson":"原因與教訓"}],"milestones":[""]},"marketViews":[{"who":"承銷商／券商","view":"整體看法","concerns":["主要疑慮"]},{"who":"創投 VC","view":"","concerns":[""]},{"who":"投資銀行 IB","view":"","concerns":[""]}],"consensus":"三方共識與分歧，80 字內","agents":[{"name":"Agent 名稱","score":"X / 10","points":["最多 3 點"]}]}
+案例須保留原文的「（請查證）」標註，原文沒有的案例不得新增。
 
 公司：${d.name}｜${d.ind}｜${d.stage}｜委託人：${d.role}
 
@@ -913,6 +928,21 @@ function buildPpt(J){const d=cur();const P=new PptxGenJS();P.layout='LAYOUT_WIDE
     else bullets(s,J.valuation)}
   // 7 agents
   const ag=(J.agents||[]).filter(a=>a&&a.name);for(let i=0;i<ag.length;i+=4){const s=base('專家委員意見摘要'+(ag.length>4?`（${i/4+1}）`:''),'EXPERT PANEL');ag.slice(i,i+4).forEach((a,k)=>{const x=0.6+(k%2)*6.15,y=1.6+Math.floor(k/2)*2.7;s.addShape(P.ShapeType.rect,{x,y,w:5.95,h:2.5,fill:{color:'F5F6F8'},line:{color:LINE,width:0.75}});s.addShape(P.ShapeType.rect,{x,y,w:0.08,h:2.5,fill:{color:BRASS},line:{color:BRASS,width:0}});s.addText(a.name,{x:x+0.25,y:y+0.12,w:4.2,h:0.45,fontFace:F,fontSize:15,bold:true,color:NAVY});s.addText(a.score||'',{x:x+4.3,y:y+0.12,w:1.5,h:0.45,fontFace:F,fontSize:14,bold:true,color:BRASS,align:'right'});s.addText((a.points||[]).slice(0,3).map(t=>({text:String(t),options:{bullet:true,paraSpaceAfter:4}})),{x:x+0.25,y:y+0.6,w:5.55,h:1.8,fontFace:F,fontSize:12,color:'18212E',valign:'top',fit:'shrink'})})}
+  // 7b capital market strategy
+  if(J.capitalStrategy&&((J.capitalStrategy.success||[]).length||(J.capitalStrategy.failure||[]).length||J.capitalStrategy.path)){const C=J.capitalStrategy;const s=base('資本市場策略：成功與失敗案例','CAPITAL MARKETS STRATEGY');
+    s.addText([{text:'建議路徑　',options:{bold:true,color:BRASS}},{text:C.path||'—',options:{color:'18212E'}}],{x:0.6,y:1.5,w:12.1,h:0.6,fontFace:F,fontSize:15,fill:{color:SOFT},margin:0.12,fit:'shrink'});
+    const tb=(arr,head,col)=>[[{text:head,options:{bold:true,color:'FFFFFF',fill:{color:col}}},{text:'關鍵做法／教訓',options:{bold:true,color:'FFFFFF',fill:{color:col}}}]].concat((arr||[]).slice(0,3).map(x=>[x.case||'',x.lesson||'']));
+    s.addTable(tb(C.success,'成功案例','1F7A4D'),{x:0.6,y:2.3,w:5.95,colW:[2.4,3.55],fontFace:F,fontSize:11,border:{type:'solid',color:LINE,pt:0.75},valign:'top'});
+    s.addTable(tb(C.failure,'失敗／受挫案例','B3261E'),{x:6.75,y:2.3,w:5.95,colW:[2.4,3.55],fontFace:F,fontSize:11,border:{type:'solid',color:LINE,pt:0.75},valign:'top'});
+    if((C.milestones||[]).length)s.addText([{text:'關鍵里程碑　',options:{bold:true,color:NAVY}}].concat(C.milestones.slice(0,5).map((m,i)=>({text:`${i?'　→　':''}${m}`,options:{color:'18212E'}}))),{x:0.6,y:5.9,w:12.1,h:0.7,fontFace:F,fontSize:12,fit:'shrink'});
+    s.addText('案例由 AI 依公開資訊整理，正式使用前請查證原始資料。',{x:0.6,y:6.62,w:12.1,h:0.3,fontFace:F,fontSize:9,color:MUTED,italic:true})}
+  // 7c market views
+  if((J.marketViews||[]).length){const s=base('券商／VC／IB 看法','MARKET VIEWS');const mv=J.marketViews.slice(0,3);const cols=['13243D','A77D2C','1F7A4D'];
+    mv.forEach((m,k)=>{const x=0.6+k*4.1;s.addShape(P.ShapeType.rect,{x,y:1.6,w:3.9,h:3.95,fill:{color:'F5F6F8'},line:{color:LINE,width:0.75}});s.addShape(P.ShapeType.rect,{x,y:1.6,w:3.9,h:0.55,fill:{color:cols[k%3]},line:{color:cols[k%3],width:0}});s.addText(m.who||'',{x:x+0.2,y:1.62,w:3.5,h:0.5,fontFace:F,fontSize:15,bold:true,color:'FFFFFF'});
+      s.addText(m.view||'',{x:x+0.2,y:2.25,w:3.5,h:1.6,fontFace:F,fontSize:12.5,color:'18212E',valign:'top',fit:'shrink'});s.addText('主要疑慮',{x:x+0.2,y:3.9,w:3.5,h:0.3,fontFace:F,fontSize:11,bold:true,color:BRASS});
+      s.addText((m.concerns||[]).filter(Boolean).slice(0,3).map(t=>({text:String(t),options:{bullet:true}})),{x:x+0.2,y:4.2,w:3.5,h:1.3,fontFace:F,fontSize:11,color:'18212E',valign:'top',fit:'shrink'})});
+    s.addText([{text:'三方共識與分歧　',options:{bold:true,color:BRASS}},{text:J.consensus||'—',options:{color:'18212E'}}],{x:0.6,y:5.75,w:12.1,h:0.75,fontFace:F,fontSize:13,fill:{color:SOFT},margin:0.12,fit:'shrink'});
+    s.addText('三方觀點為 AI 依專業慣例模擬，非真實機構意見。',{x:0.6,y:6.62,w:12.1,h:0.3,fontFace:F,fontSize:9,color:MUTED,italic:true})}
   // 8 exit & next
   {const s=base('退出策略與下一步行動','EXIT & NEXT STEPS');s.addText('退出策略',{x:0.6,y:1.55,w:5.8,h:0.4,fontFace:F,fontSize:15,bold:true,color:BRASS});bullets(s,J.exit,{x:0.6,y:2.0,w:5.8,h:4.8,fs:14});s.addText('下一步行動',{x:6.9,y:1.55,w:5.8,h:0.4,fontFace:F,fontSize:15,bold:true,color:BRASS});s.addText((J.nextSteps||[]).map((t,i)=>({text:String(t),options:{bullet:{type:'number'},paraSpaceAfter:6}})),{x:6.9,y:2.0,w:5.8,h:4.8,fontFace:F,fontSize:14,color:'18212E',valign:'top',fit:'shrink'})}
   // 9 missing & sources
