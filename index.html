@@ -140,6 +140,16 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 .agdrop{padding:12px;margin-top:2px}.agdrop b{font-size:13.5px}.agdrop span{font-size:12px}
 .agfiles{display:flex;flex-wrap:wrap;gap:6px}.agfiles:empty{display:none}.agfiles .chip{display:inline-flex;align-items:center;gap:4px}.agfiles .chip small{display:inline}.agst{font-size:12.5px;color:var(--muted)}
 #finTable input{width:92px;text-align:right}
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:center;margin-bottom:20px}
+.hero .lede{margin-bottom:16px}
+.hero-art{margin:0;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(10,20,40,.25);aspect-ratio:16/10;background:#0d1a2e}
+.scene{display:block;width:100%;height:100%}
+.scene.banner{height:120px;border-radius:12px;margin-bottom:18px;background:#0d1a2e;box-shadow:0 6px 18px rgba(10,20,40,.18)}
+.mi{display:inline-flex;width:30px;height:30px;border-radius:8px;align-items:center;justify-content:center;background:var(--brass-soft);color:var(--brass);margin-right:8px;flex:none;vertical-align:middle}
+.mi svg{width:18px;height:18px}
+a.chip.withicon{display:inline-flex;align-items:center}
+a.chip.withicon .mtxt{display:block}
+@media (max-width:860px){.hero{grid-template-columns:1fr}.scene.banner{height:90px}}
 .menu-btn{display:none}
 @media (max-width:860px){
   .app{grid-template-columns:1fr}
@@ -179,10 +189,12 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 
 <!-- ============ OVERVIEW ============ -->
 <section class="view" id="v-overview">
+  <div class="hero"><div class="hero-text">
   <div class="eyebrow">AI CAPITAL INTELLIGENCE</div>
   <h1>每一個投資案，在投入資金前，先經過七大專家大腦審查</h1>
   <p class="lede">建立一個投資案件、上傳公司資料，總控 AI 會把案件分派給法律、會計、投行、創投、產業、專利臨床、策略併購七位專家 Agent，交叉驗證後產出投資決策報告。聚焦 AI、生技醫療與未來明星產業。</p>
-  <div class="row" style="margin-bottom:18px"><a href="#data"><button type="button">建立案件・上傳資料</button></a><a href="#valuation"><button type="button" class="ghost">試用估值計算器</button></a></div>
+  <div class="row" ><a href="#data"><button type="button">建立案件・上傳資料</button></a><a href="#valuation"><button type="button" class="ghost">試用估值計算器</button></a></div>
+  </div><figure class="hero-art"><canvas class="scene" data-scene="hero" aria-label="插圖：AI 神經網路、K 線成長曲線與金幣堆疊" role="img"></canvas></figure></div>
 
   <div class="arch">
     <div class="layer orch"><b>AI 專家決策中樞</b><h3>總控 AI Orchestrator</h3><div style="font-size:13px;opacity:.85">案件管理｜資料整合｜Agent 分派｜交叉驗證｜決策報告</div></div>
@@ -229,6 +241,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 
 <!-- ============ DATA ============ -->
 <section class="view" id="v-data">
+  <canvas class="scene banner" data-scene="docs" aria-label="插圖：文件與財務數據流入 AI 分析" role="img"></canvas>
   <div class="eyebrow">案件資料中心</div>
   <h1>上傳與輸入投資標的資料</h1>
   <p class="lede">每個投資案件的文件、財務數字與說明都存在這裡。所有 AI 專家、估值計算器與補件清單都讀取目前選取的案件。文件只在你的瀏覽器中解析與保存，只有在你按下 AI 分析時才會送出內容。</p>
@@ -266,6 +279,7 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 
 <!-- ============ COMMITTEE ============ -->
 <section class="view" id="v-committee">
+  <canvas class="scene banner" data-scene="committee" aria-label="插圖：九位 AI 專家連線交叉驗證" role="img"></canvas>
   <div class="eyebrow">AI 投資決策委員會</div>
   <h1>召開投資決策委員會</h1>
   <p class="lede">先在「案件資料中心」上傳共用文件與財務數字。每位專家也可以上傳自己的專屬文件，並單獨執行分析。每位專家依自己的專業出具意見，最後由總控 Agent 交叉驗證並給出評級。</p>
@@ -809,6 +823,43 @@ function renderScoreRows(){$('#scoreRows').innerHTML=SC.map((s,i)=>`<div class="
 function calcScore(){store.set('score',sc);store.set('veto',veto);let t=0;SC.forEach((s,i)=>{t+=sc[i];$('#scv-'+i).textContent=`${sc[i]} / ${s[1]}`});$('#scoreV').textContent=t+' / 100';const vt=veto.some(Boolean);let r,c,txt;if(vt){r='否決';c='bad';txt='觸發否決條件：先釐清問題，總分暫不採用。'}else if(t>=80){r='值得深入評估';c='good';txt='進入投資條件設計、完整 DD 與投資簡報。'}else if(t>=65){r='有條件評估';c='warn';txt='補齊尚缺資料、針對低分項目設定投資前提或保護條款。'}else if(t>=50){r='需要改善';c='warn';txt='建議先執行企業改善與募資計畫調整，再重新評估。'}else{r='不建議';c='bad';txt='產出風險報告與暫緩建議。'}$('#scorePill').textContent=r;$('#scorePill').className='pill '+c;$('#scoreText').textContent=txt;$('#scoreCard').className='card stripe '+c}
 $('#resetScore').onclick=()=>{sc=SC.map(s=>s[2]);veto=[0,0,0,0];renderScoreRows()};renderScoreRows();
 
+
+/* ---------- illustrations (original, drawn on canvas) ---------- */
+const ICONS={ipo:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',bp:'<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',valuation:'<path d="M4 4v16h16"/><path d="M8 15l4-5 3 3 5-7"/>',biotech:'<path d="M8 3c0 7 8 5 8 12 0 3-2 5-2 6M16 3c0 7-8 5-8 12 0 3 2 5 2 6"/><path d="M9 7h6M9 17h6"/>',ma:'<path d="M3 8h9l-3-3M21 16h-9l3 3"/><path d="M12 8c3 0 4 2 4 4s1 4 4 4M12 16c-3 0-4-2-4-4"/>',ip:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.7 1 1.5 1 2.5h6c0-1 .2-1.8 1-2.5A6 6 0 0 0 12 3z"/>',industry:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',cases:'<path d="M3 5h18v4H3z"/><path d="M5 9v10h14V9M10 13h4"/>'};
+$$('.layer .chips a.chip').forEach(a=>{const k=a.getAttribute('href').slice(1);if(ICONS[k]){a.classList.add('withicon');a.innerHTML=`<span class="mtxt">${a.innerHTML}</span>`;a.insertAdjacentHTML('afterbegin',`<span class="mi" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg></span>`)}});
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function drawScene(ctx,w,h,t,kind,opt={}){const R=rng(kind==='hero'?7:kind==='docs'?11:19);ctx.save();ctx.clearRect(0,0,w,h);
+  const g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#0b1626');g.addColorStop(.55,'#13243d');g.addColorStop(1,'#1d3556');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  const u=Math.min(w,h);ctx.strokeStyle='rgba(255,255,255,.045)';ctx.lineWidth=1;const gs=Math.max(24,u/12);for(let x=0;x<w;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=0;y<h;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  // candles + trend
+  const cx0=w*(kind==='hero'?0.04:0.02),cx1=w*(kind==='hero'?0.66:0.5),n=Math.round((cx1-cx0)/Math.max(10,u/(kind==='hero'?18:9))),cw=(cx1-cx0)/n;let p=0.72,pts=[];const top=h*(kind==='hero'?0.18:0.12),bot=h*(kind==='hero'?0.7:0.9);
+  for(let i=0;i<n;i++){const o=p;p=Math.max(0.08,p-(0.028+R()*0.05)+(R()*0.07));if(i>n*0.55)p-=0.01;const c=p,hi=Math.min(o,c)-R()*0.05,lo=Math.max(o,c)+R()*0.05;const Y=v=>top+(bot-top)*v;const x=cx0+i*cw+cw/2,up=c<o;
+    ctx.strokeStyle=up?'rgba(76,192,138,.6)':'rgba(224,110,96,.55)';ctx.beginPath();ctx.moveTo(x,Y(hi));ctx.lineTo(x,Y(lo));ctx.stroke();ctx.fillStyle=up?'rgba(76,192,138,.5)':'rgba(224,110,96,.42)';const y1=Y(Math.min(o,c)),y2=Y(Math.max(o,c));ctx.fillRect(x-cw*0.32,y1,cw*0.64,Math.max(2,y2-y1));pts.push([x,Y(c)])}
+  const ag=ctx.createLinearGradient(0,top,0,bot);ag.addColorStop(0,'rgba(214,173,92,.28)');ag.addColorStop(1,'rgba(214,173,92,0)');ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.lineTo(pts[pts.length-1][0],bot);ctx.lineTo(pts[0][0],bot);ctx.closePath();ctx.fillStyle=ag;ctx.fill();
+  ctx.shadowColor='rgba(214,173,92,.8)';ctx.shadowBlur=u/30;ctx.strokeStyle='#d6ad5c';ctx.lineWidth=Math.max(2,u/170);ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();ctx.shadowBlur=0;
+  const [lx,ly]=pts[pts.length-1];ctx.fillStyle='#f3d792';ctx.beginPath();ctx.arc(lx,ly,Math.max(3,u/70)*(1+0.15*Math.sin(t*3)),0,7);ctx.fill();
+  // neural network
+  const nx0=w*(kind==='hero'?0.56:0.58),nx1=w*0.96,layers=kind==='committee'?[3,5,9,5,1]:[3,5,5,3],L=layers.map((m,i)=>{const x=nx0+(nx1-nx0)*i/(layers.length-1);return Array.from({length:m},(_,j)=>[x,h*0.14+(h*0.72)*(m===1?0.5:j/(m-1))])});
+  ctx.lineWidth=1;for(let i=0;i<L.length-1;i++)for(const a of L[i])for(const b of L[i+1]){ctx.strokeStyle='rgba(159,190,230,.13)';ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke()}
+  for(let k=0;k<(kind==='hero'?14:10);k++){const li=k%(L.length-1),a=L[li][Math.floor(R()*L[li].length)],b=L[li+1][Math.floor(R()*L[li+1].length)],ph=((t*0.35+R())%1);ctx.fillStyle=`rgba(122,214,255,${0.35+0.5*Math.sin(ph*Math.PI)})`;ctx.beginPath();ctx.arc(a[0]+(b[0]-a[0])*ph,a[1]+(b[1]-a[1])*ph,Math.max(1.6,u/150),0,7);ctx.fill()}
+  L.flat().forEach(([x,y],i)=>{const r=Math.max(3,u/(kind==='hero'?55:40));ctx.fillStyle='rgba(122,214,255,.16)';ctx.beginPath();ctx.arc(x,y,r*2.1,0,7);ctx.fill();ctx.fillStyle=kind==='committee'&&i>=L.flat().length-1?'#d6ad5c':'#cfe6ff';ctx.beginPath();ctx.arc(x,y,r*(1+0.12*Math.sin(t*2+i)),0,7);ctx.fill()});
+  // coins
+  const coin=(x,y,r,lab)=>{for(let k=0;k<3;k++){ctx.fillStyle=k?'#8a6a2a':'#b48a36';ctx.beginPath();ctx.ellipse(x,y+k*r*0.18,r,r*0.42,0,0,7);ctx.fill()}const cg=ctx.createLinearGradient(x-r,y-r,x+r,y+r);cg.addColorStop(0,'#f6dc9a');cg.addColorStop(1,'#c4973f');ctx.fillStyle=cg;ctx.beginPath();ctx.ellipse(x,y,r,r*0.42,0,0,7);ctx.fill();ctx.strokeStyle='rgba(120,85,25,.6)';ctx.lineWidth=Math.max(1,r/14);ctx.beginPath();ctx.ellipse(x,y,r*0.72,r*0.3,0,0,7);ctx.stroke();ctx.fillStyle='#7a5a1c';ctx.font=`700 ${Math.round(r*0.42)}px Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(lab,x,y+1)};
+  const stack=(x,y,r,cnt,lab)=>{for(let k=cnt-1;k>=0;k--)coin(x,y-k*r*0.3,r,k===cnt-1?lab:'')};
+  if(kind==='hero'){const r=u/13;stack(w*0.12,h*0.88,r,3,'$');stack(w*0.25,h*0.9,r*1.05,5,'NT$');stack(w*0.38,h*0.89,r*0.95,4,'$');coin(w*0.5,h*0.86+Math.sin(t*1.6)*u*0.012,r*0.85,'AI')}
+  else if(kind==='docs'){const r=u/4.2;for(let k=0;k<3;k++){const x=w*0.62+k*u*0.32,y=h*0.2+k*u*0.05;ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(x,y,u*0.42,u*0.56);ctx.fillStyle='rgba(19,36,61,.35)';for(let j=0;j<4;j++)ctx.fillRect(x+u*0.06,y+u*(0.1+j*0.1),u*(0.3-(j%2)*0.08),u*0.035)}coin(w*0.93,h*0.72,r*0.5,'$')}
+  else{coin(w*0.53,h*0.74,u/4.6,'$')}
+  if(opt.fadeLeft){const fg=ctx.createLinearGradient(0,0,w,0);fg.addColorStop(0,'rgba(19,36,61,.97)');fg.addColorStop(.5,'rgba(19,36,61,.82)');fg.addColorStop(.75,'rgba(19,36,61,.25)');fg.addColorStop(1,'rgba(19,36,61,0)');ctx.fillStyle=fg;ctx.fillRect(0,0,w,h)}
+  ctx.restore()}
+const SCENES=[];
+function setupScene(c){const ctx=c.getContext('2d');const st={c,ctx,kind:c.dataset.scene,w:0,h:0};const size=()=>{const r=c.getBoundingClientRect();if(!r.width)return false;const dpr=Math.min(2,window.devicePixelRatio||1);st.w=r.width;st.h=r.height;c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);return true};st.size=size;SCENES.push(st);if(size())drawScene(ctx,st.w,st.h,0,st.kind)}
+$$('canvas.scene').forEach(setupScene);
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;let last=0;
+function frame(ts){if(ts-last>40){last=ts;SCENES.forEach(st=>{if(!st.c.offsetParent)return;if(!st.w||st.c.width<2)st.size();if(st.w&&!reduce)drawScene(st.ctx,st.w,st.h,ts/1000,st.kind)})}requestAnimationFrame(frame)}
+addEventListener('resize',()=>SCENES.forEach(st=>{if(st.c.offsetParent&&st.size())drawScene(st.ctx,st.w,st.h,0,st.kind)}));
+addEventListener('hashchange',()=>setTimeout(()=>SCENES.forEach(st=>{if(st.c.offsetParent&&st.size())drawScene(st.ctx,st.w,st.h,0,st.kind)}),0));
+requestAnimationFrame(frame);
+function coverImage(){const c=document.createElement('canvas');c.width=1600;c.height=900;drawScene(c.getContext('2d'),1600,900,0,'hero',{fadeLeft:true});return c.toDataURL('image/png').replace(/^data:/,'')}
 /* ---------- deals / data center ---------- */
 const CASE_DOC_LIMIT=90000, FILE_LIMIT=60000, AGENT_DOC_LIMIT=60000, ORCH_DOC_LIMIT=30000;
 const CATS=['公司基本資料','財務資料','營運資料','市場資料','技術資料','法律資料','專利資料','臨床資料','人才資料','募資資料','未來預測','退出規劃','其他'];
@@ -907,7 +958,7 @@ function buildPpt(J){const d=cur();const P=new PptxGenJS();P.layout='LAYOUT_WIDE
   const base=(title,eyebrow)=>{const s=P.addSlide();s.background={color:'FFFFFF'};n++;s.addShape(P.ShapeType.rect,{x:0,y:0,w:13.33,h:0.12,fill:{color:NAVY}});if(eyebrow)s.addText(eyebrow,{x:0.6,y:0.35,w:9,h:0.3,fontFace:F,fontSize:11,color:BRASS,bold:true,charSpacing:2});s.addText(title,{x:0.6,y:0.62,w:12,h:0.7,fontFace:F,fontSize:26,bold:true,color:NAVY});s.addShape(P.ShapeType.line,{x:0.6,y:1.38,w:12.1,h:0,line:{color:LINE,width:1}});s.addText(`${d.name}｜AI Capital Intelligence｜謝邦彥 博士 設計`,{x:0.6,y:7.0,w:9,h:0.3,fontFace:F,fontSize:9,color:MUTED});s.addText(String(n),{x:12.2,y:7.0,w:0.5,h:0.3,fontFace:F,fontSize:9,color:MUTED,align:'right'});return s};
   const bullets=(s,arr,o={})=>{const a=(arr||[]).filter(Boolean);if(!a.length){s.addText('（無資料）',{x:o.x??0.6,y:o.y??1.6,w:o.w??12.1,h:0.5,fontFace:F,fontSize:14,color:MUTED});return}s.addText(a.map(t=>({text:String(t),options:{bullet:{code:'25A0'},paraSpaceAfter:8}})),{x:o.x??0.6,y:o.y??1.6,w:o.w??12.1,h:o.h??5.2,fontFace:F,fontSize:o.fs??17,color:'18212E',valign:'top',fit:'shrink'})};
   // 1 cover
-  {const s=P.addSlide();n++;s.background={color:NAVY};s.addText('AI 投資決策委員會分析報告',{x:0.8,y:1.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'D6AD5C',bold:true,charSpacing:3});s.addText(d.name,{x:0.8,y:2.2,w:11.7,h:1.3,fontFace:F,fontSize:38,bold:true,color:'FFFFFF',fit:'shrink'});s.addText(`${d.ind}｜${d.stage}`,{x:0.8,y:3.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'C9D3E2'});
+  {const s=P.addSlide();n++;try{s.background={data:coverImage()}}catch(e){s.background={color:NAVY}}s.addText('AI 投資決策委員會分析報告',{x:0.8,y:1.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'D6AD5C',bold:true,charSpacing:3});s.addText(d.name,{x:0.8,y:2.2,w:11.7,h:1.3,fontFace:F,fontSize:38,bold:true,color:'FFFFFF',fit:'shrink'});s.addText(`${d.ind}｜${d.stage}`,{x:0.8,y:3.6,w:11.5,h:0.5,fontFace:F,fontSize:16,color:'C9D3E2'});
     if(J.rating)s.addText(`評級：${J.rating}`+(J.score!=null?`　投資總分：${J.score} / 100`:''),{x:0.8,y:4.5,w:7.5,h:0.6,fontFace:F,fontSize:18,bold:true,color:'FFFFFF',fill:{color:RC[J.rating]||BRASS},margin:0.15});
     s.addText(`報告日期：${date}　委託人角色：${d.role}`,{x:0.8,y:6.4,w:11.5,h:0.4,fontFace:F,fontSize:12,color:'9FB0C7'});s.addText('AI Capital Intelligence｜謝邦彥 博士 設計',{x:0.8,y:6.8,w:11.5,h:0.4,fontFace:F,fontSize:12,color:'D6AD5C',bold:true})}
   // 2 conclusion
