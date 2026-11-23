@@ -160,6 +160,10 @@ a.chip.withicon .mtxt{display:block}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+<script>
+/* 安全設定：平台資料只存在目前分頁（sessionStorage），關閉分頁即清除。清掉舊版留在 localStorage 的長期資料。 */
+(function(){try{var L=window.localStorage,ks=[];for(var i=0;i<L.length;i++){var k=L.key(i);if(k&&k.indexOf('aci_')===0)ks.push(k)}ks.forEach(function(k){L.removeItem(k)})}catch(e){}})();
+</script>
 <style>html.ipchk main,html.ipchk nav.side,html.ipchk .menu-btn{visibility:hidden}</style>
 <script>
 /* 換訪客（IP 不同）時，先清空這台電腦中的平台資料再顯示頁面 */
@@ -167,7 +171,7 @@ a.chip.withicon .mtxt{display:block}
  setTimeout(show,4000);
  try{fetch('/api/ai',{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){
   if(!j||!j.visitor){show();return}
-  var ls;try{ls=window.localStorage}catch(e){show();return}
+  var ls;try{ls=window.sessionStorage}catch(e){show();return}
   var prev=ls.getItem('aci_visitor'),keys=[];for(var i=0;i<ls.length;i++){var k=ls.key(i);if(k&&k.indexOf('aci_')===0&&k!=='aci_visitor')keys.push(k)}
   var hasData=['aci_deals','aci_code','aci_cases','aci_cur'].some(function(k){return ls.getItem(k)!==null});
   if(prev!==j.visitor&&(prev!==null?keys.length:hasData)){keys.forEach(function(k){ls.removeItem(k)});ls.setItem('aci_visitor',j.visitor);try{sessionStorage.setItem('aci_cleared','1')}catch(e){}location.reload();return}
@@ -257,7 +261,8 @@ a.chip.withicon .mtxt{display:block}
   <canvas class="scene banner" data-scene="docs" aria-label="插圖：文件與財務數據流入 AI 分析" role="img"></canvas>
   <div class="eyebrow">案件資料中心</div>
   <h1>上傳與輸入投資標的資料</h1>
-  <p class="lede">每個投資案件的文件、財務數字與說明都存在這裡。所有 AI 專家、估值計算器與補件清單都讀取目前選取的案件。文件只在你的瀏覽器中解析與保存，只有在你按下 AI 分析時才會送出內容。</p>
+  <p class="lede">每個投資案件的文件、財務數字與說明都存在這裡。所有 AI 專家、估值計算器與補件清單都讀取目前選取的案件。文件只在你的瀏覽器中解析，只有在你按下 AI 分析時才會送出內容。</p>
+  <p class="note" style="margin:-8px 0 18px"><b>資料安全：</b>案件、文件與分析結果只保留在目前這個瀏覽器分頁，重新整理仍會保留；<b>關閉分頁或瀏覽器後即自動清除</b>。需要保存的結果，請先下載 PPT 報告。</p>
   <div class="card"><div class="row" style="justify-content:space-between">
     <label for="dealSel" style="flex-direction:row;align-items:center;gap:8px">目前案件<select id="dealSel" style="width:auto;min-width:240px"></select></label>
     <div class="row"><button type="button" class="ghost" id="dealNew">新增案件</button><button type="button" class="ghost" id="dealDel">刪除此案件</button></div>
@@ -518,7 +523,7 @@ a.chip.withicon .mtxt{display:block}
 <section class="view" id="v-cases">
   <div class="eyebrow">模組 08</div>
   <h1>案例資料庫</h1>
-  <p class="lede">每筆案例必須保留交易日期、資料來源、交易條件與估值時點。資料存在你自己的瀏覽器中。</p>
+  <p class="lede">每筆案例必須保留交易日期、資料來源、交易條件與估值時點。資料只保留在目前分頁，關閉分頁即清除。</p>
   <div class="card"><h3>新增案例</h3><div class="form" style="margin-top:8px">
     <label for="kType">類型<select id="kType"><option>IPO 成功</option><option>募資成功</option><option>併購成功</option><option>失敗案例</option></select></label>
     <label for="kCo">公司<input id="kCo"></label>
@@ -593,7 +598,7 @@ a.chip.withicon .mtxt{display:block}
 <script>
 (function(){
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const store={get(k,d){try{const v=localStorage.getItem('aci_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('aci_'+k,JSON.stringify(v))}catch(e){}}};
+const store={get(k,d){try{const v=sessionStorage.getItem('aci_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{sessionStorage.setItem('aci_'+k,JSON.stringify(v))}catch(e){}}};
 const fmt=(n,d=0)=>isFinite(n)?n.toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const pct=(n,d=1)=>isFinite(n)?(n*100).toFixed(d)+'%':'—';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -611,14 +616,14 @@ function disableAI(msg){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEac
 function enableAI(){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
 let CACHE_OK=false;const USAGE={calls:0,in:0,cr:0,cw:0,out:0};
 function trackUsage(u){if(!u)return;USAGE.calls++;USAGE.in+=u.input_tokens||0;USAGE.cr+=u.cache_read_input_tokens||0;USAGE.cw+=u.cache_creation_input_tokens||0;USAGE.out+=u.output_tokens||0;const el=document.getElementById('usageLine');if(el){const tot=USAGE.in+USAGE.cr+USAGE.cw;el.style.display='';el.textContent=`本頁累計 AI 用量：${USAGE.calls} 次呼叫｜輸入 ${fmt(tot)} token，其中 ${fmt(USAGE.cr)}（${tot?Math.round(USAGE.cr/tot*100):0}%）由快取讀取、${fmt(USAGE.cw)} 寫入快取｜輸出 ${fmt(USAGE.out)} token`}}
-function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=localStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,system:opts.system||'',context:opts.context||'',cache:opts.cache!==false,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{localStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let raw='';const vis=()=>{const k=raw.indexOf('\u0000');return k<0?raw:raw.slice(0,k)};for(;;){const{done,value}=await rd.read();if(done)break;raw+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text:vis()})}const k=raw.indexOf('\u0000');let usage=null;if(k>=0){try{usage=JSON.parse(raw.slice(k+1))}catch(e){}}trackUsage(usage);return{text:vis(),usage}})()}
+function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=sessionStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,system:opts.system||'',context:opts.context||'',cache:opts.cache!==false,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{sessionStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let raw='';const vis=()=>{const k=raw.indexOf('\u0000');return k<0?raw:raw.slice(0,k)};for(;;){const{done,value}=await rd.read();if(done)break;raw+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text:vis()})}const k=raw.indexOf('\u0000');let usage=null;if(k>=0){try{usage=JSON.parse(raw.slice(k+1))}catch(e){}}trackUsage(usage);return{text:vis(),usage}})()}
 (async()=>{
   let s=null;
   if(window.claude&&claude.use){try{s=await claude.use('sample')}catch(e){s=null}}
   try{if(window.claude&&claude.use)claude.use('downloads').then(x=>{dl=x}).catch(()=>{})}catch(e){}
   if(s){ai=(p,o={})=>s([o.system,o.context,p].filter(Boolean).join('\n\n'),{modelTier:o.modelTier,signal:o.signal,onText:o.onText});CACHE_OK=false;return}
   try{const r=await fetch('/api/ai',{method:'GET'});const j=await r.json();
-    if(j.ok){ai=serverAI;CACHE_OK=true;if(j.needsCode){$('#codeRow').style.display='';try{$('#accessCode').value=localStorage.getItem('aci_code')||''}catch(e){}}enableAI();return}
+    if(j.ok){ai=serverAI;CACHE_OK=true;if(j.needsCode){$('#codeRow').style.display='';try{$('#accessCode').value=sessionStorage.getItem('aci_code')||''}catch(e){}}enableAI();return}
     disableAI('伺服器尚未設定 ANTHROPIC_API_KEY，AI 功能暫停。');return}catch(e){}
   disableAI('此檢視無法呼叫 AI。');
 })();
@@ -883,11 +888,11 @@ const emptyFin=()=>({years:['2023','2024','2025'],v:Object.fromEntries(FIN_ROWS.
 const newDeal=(o={})=>Object.assign({id:'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:'新投資案件',ind:'AI 醫療',stage:'未公開發行／新創',role:'投資人：評估是否投資',desc:'',files:[],agentFiles:{},fin:emptyFin()},o);
 const DEMO_DESC=$('#cDesc').value;
 var deals=null,curId=null;
-try{deals=JSON.parse(localStorage.getItem('aci_deals')||'null');curId=localStorage.getItem('aci_cur')}catch(e){}
+try{deals=JSON.parse(sessionStorage.getItem('aci_deals')||'null');curId=sessionStorage.getItem('aci_cur')}catch(e){}
 if(!Array.isArray(deals)||!deals.length){const f=emptyFin();Object.assign(f.v,{rev:[28,41,62],gp:[19,29,45],op:[-50,-44,-40],ni:[-52,-45,-38],ebitda:[-40,-33,-26],ocf:[-45,-40,-35],capex:[5,6,8],cash:[40,70,51],debt:[0,10,15]});deals=[newDeal({name:'示範：明日醫影 AI 股份有限公司',desc:DEMO_DESC,fin:f})]}
 if(!deals.some(d=>d.id===curId))curId=deals[0].id;
 function cur(){return deals.find(d=>d.id===curId)||deals[0]}
-function saveDeals(){try{localStorage.setItem('aci_deals',JSON.stringify(deals));localStorage.setItem('aci_cur',curId);return true}catch(e){$('#upStatus').textContent='瀏覽器儲存空間不足：這次上傳的文件內容只會保留到關閉頁面為止。可刪除不需要的文件或案件釋出空間。';return false}}
+function saveDeals(){try{sessionStorage.setItem('aci_deals',JSON.stringify(deals));sessionStorage.setItem('aci_cur',curId);return true}catch(e){$('#upStatus').textContent='分頁暫存空間不足：這次上傳的文件內容未能存入暫存，重新整理後需重新上傳。可刪除不需要的文件或案件釋出空間。';return false}}
 function finText(d){const y=d.fin.years;const has=FIN_ROWS.some(r=>d.fin.v[r[0]].some(x=>x!==null&&x!==''));if(!has)return '';return '項目\t'+y.join('\t')+'\n'+FIN_ROWS.map(r=>r[1]+'\t'+y.map((_,i)=>d.fin.v[r[0]][i]??'').join('\t')).join('\n')}
 const FIELDS=[['cName','name'],['cInd','ind'],['cStage','stage'],['cRole','role'],['cDesc','desc']];
 function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderAgentFiles();renderRouting();renderResults();renderCmSum()}
