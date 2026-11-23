@@ -160,6 +160,19 @@ a.chip.withicon .mtxt{display:block}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+<style>html.ipchk main,html.ipchk nav.side,html.ipchk .menu-btn{visibility:hidden}</style>
+<script>
+/* 換訪客（IP 不同）時，先清空這台電腦中的平台資料再顯示頁面 */
+(function(){var D=document.documentElement;D.classList.add('ipchk');var done=false;function show(){if(done)return;done=true;D.classList.remove('ipchk')}
+ setTimeout(show,4000);
+ try{fetch('/api/ai',{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){
+  if(!j||!j.visitor){show();return}
+  var ls;try{ls=window.localStorage}catch(e){show();return}
+  var prev=ls.getItem('aci_visitor'),keys=[];for(var i=0;i<ls.length;i++){var k=ls.key(i);if(k&&k.indexOf('aci_')===0&&k!=='aci_visitor')keys.push(k)}
+  var hasData=['aci_deals','aci_code','aci_cases','aci_cur'].some(function(k){return ls.getItem(k)!==null});
+  if(prev!==j.visitor&&(prev!==null?keys.length:hasData)){keys.forEach(function(k){ls.removeItem(k)});ls.setItem('aci_visitor',j.visitor);try{sessionStorage.setItem('aci_cleared','1')}catch(e){}location.reload();return}
+  ls.setItem('aci_visitor',j.visitor);show()}).catch(show)}catch(e){show()}})();
+</script>
 </head>
 <body>
 <button class="menu-btn" id="menuBtn" type="button">☰ 功能選單</button>
@@ -930,6 +943,7 @@ $('#finAI').onclick=async e=>{if(!ai)return;const d=cur();if(!d.files.length&&!d
   catch(err){$('#finMsg').textContent='擷取失敗：'+(err?.code==='bad_code'?'存取碼錯誤，請到「投資決策委員會」頁輸入。':err?.message||'AI 回應無法解析，請重試或手動輸入。')}
   b.disabled=false};
 loadDeal();renderCk();
+try{if(sessionStorage.getItem('aci_cleared')){sessionStorage.removeItem('aci_cleared');const n=document.createElement('div');n.className='note';n.setAttribute('role','status');n.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.2);background:var(--card);border:1px solid var(--line)';n.textContent='偵測到新的訪客，已清空這台電腦先前留下的平台資料。';document.body.appendChild(n);setTimeout(()=>n.remove(),6000)}}catch(e){}
 
 /* ---------- quick upload on committee ---------- */
 (()=>{const inp=$('#cmFile'),dz=$('#cmDrop');const go=async list=>{if(!list||!list.length)return;const st=$('#cStatus');st.style.display='';st.dataset.k='run';const {ok,fail}=await ingest(list,cur().files,st);renderFiles();renderCk();renderCmSum();st.textContent=`已加入 ${ok} 份共用文件。`+(fail.length?'未成功：'+fail.join('；'):'');if(ok&&ai&&!$('#runCommittee').disabled)$('#runCommittee').click();else if(ok&&!ai)st.textContent+=' AI 目前無法使用，文件已保存。'};

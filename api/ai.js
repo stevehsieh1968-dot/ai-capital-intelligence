@@ -20,8 +20,23 @@ const json = (obj, status = 200) =>
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
 
-export function GET() {
-  return json({ ok: Boolean(process.env.ANTHROPIC_API_KEY), needsCode: Boolean(process.env.ACI_ACCESS_CODE) });
+// 訪客識別：只回傳 IP 經雜湊後的短代碼，伺服器不記錄、不保存 IP。
+// 前端用它判斷「是否換了訪客」，換人時先清空瀏覽器中的平台資料。
+async function visitorKey(req) {
+  const fwd = req.headers.get('x-forwarded-for') || '';
+  const ip = (fwd.split(',')[0] || req.headers.get('x-real-ip') || '').trim();
+  if (!ip) return null;
+  const salt = process.env.ACI_IP_SALT || process.env.ACI_ACCESS_CODE || 'ai-capital-intelligence';
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + '|' + ip));
+  return [...new Uint8Array(buf)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function GET(req) {
+  return json({
+    ok: Boolean(process.env.ANTHROPIC_API_KEY),
+    needsCode: Boolean(process.env.ACI_ACCESS_CODE),
+    visitor: req ? await visitorKey(req) : null,
+  });
 }
 
 export async function POST(req) {
