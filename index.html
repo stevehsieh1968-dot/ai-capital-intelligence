@@ -150,6 +150,28 @@ footer{margin-top:40px;font-size:12.5px;color:var(--muted);max-width:90ch;border
 a.chip.withicon{display:inline-flex;align-items:center}
 a.chip.withicon .mtxt{display:block}
 @media (max-width:860px){.hero{grid-template-columns:1fr}.scene.banner{height:90px}}
+.cp-main{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);margin-top:14px}
+.cp-timeline{display:flex;gap:6px;margin-top:14px;overflow-x:auto;padding-bottom:4px}
+.cp-node{flex:1 0 120px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px;text-align:left;cursor:pointer;color:var(--text);font:inherit}
+.cp-node b{display:block;font-size:13.5px;color:var(--ink)}.cp-node small{color:var(--muted);font-size:12px}
+.cp-node .bar{margin-top:6px;height:6px}.cp-node.now{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass-soft)}
+.cp-node.done{border-color:var(--good)}.cp-node.done .bar i{background:var(--good)}
+.cp-stage summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.cp-stage summary::-webkit-details-marker{display:none}
+.cp-stage summary h3{margin:0}.cp-stage summary .cp-sub{font-size:13px;color:var(--muted)}
+.cp-item{display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.cp-item:first-of-type{margin-top:10px}
+.cp-item select{font-size:13px;padding:5px 6px}
+.cp-item.st-done .cp-t{color:var(--muted);text-decoration:line-through}.cp-item.st-na{opacity:.55}
+.cp-t{font-weight:500;color:var(--text);font-size:14.5px}
+.cp-docs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
+.cp-doc{font-size:12px;background:var(--paper);border:1px dashed var(--line);border-radius:6px;padding:2px 8px;color:var(--muted)}
+.cp-up{font-size:12.5px;border:1px solid var(--brass);color:var(--brass);border-radius:6px;padding:3px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;flex-direction:row}
+.cp-up input{position:absolute;width:1px;height:1px;opacity:0}
+.cp-file{font-size:12px;background:var(--brass-soft);color:var(--ink);border-radius:6px;padding:2px 6px 2px 8px;display:inline-flex;align-items:center;gap:4px}
+.cp-file button{padding:0 5px;font-size:12px;line-height:1.4}
+.cp-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+@media (max-width:1000px){.cp-main{grid-template-columns:1fr}.cp-item{grid-template-columns:1fr}}
 .menu-btn{display:none}
 @media (max-width:860px){
   .app{grid-template-columns:1fr}
@@ -189,6 +211,7 @@ a.chip.withicon .mtxt{display:block}
   <a href="#committee" data-v="committee"><span class="n">AI</span>投資決策委員會</a>
   <div class="navgroup">八大功能模組</div>
   <a href="#ipo" data-v="ipo"><span class="n">01</span>IPO 智慧中心</a>
+  <a href="#coach" data-v="coach"><span class="n">01+</span>IPO 陪跑</a>
   <a href="#bp" data-v="bp"><span class="n">02</span>募資計畫書審查</a>
   <a href="#valuation" data-v="valuation"><span class="n">03</span>企業估值中心</a>
   <a href="#biotech" data-v="biotech"><span class="n">04</span>生技估值引擎</a>
@@ -341,11 +364,36 @@ a.chip.withicon .mtxt{display:block}
         <div class="tw" style="margin-top:10px"><table id="ipoTime"></table></div>
         <p class="note" style="margin-top:8px">期間為實務常見範圍，供規劃用；實際時程取決於輔導進度、審查及市場狀況。承銷、會計師、律師等費用依募資規模與承銷商報價而定。</p>
       </div>
+      <a href="#coach" style="text-decoration:none"><div class="card stripe good"><h3>開始 IPO 陪跑 →</h3><p>逐階段檢核與文件上傳：營利／非營利路徑，鎖定生技、醫材、AI、大健康。</p></div></a>
       <div class="card stripe warn"><h3>非營利組織的上市路徑</h3><p>基金會、協會、研究機構不能直接以本身申請 IPO。可行做法是設立營利子公司、技術授權、事業分割或衍生新創，建立可投資、可募資的商業實體，再由該實體走資本市場路徑。</p></div>
       <div class="card"><h3>官方規範</h3><p><a href="https://www.twse.com.tw/" target="_blank" rel="noopener">臺灣證券交易所（上市）</a></p><p><a href="https://www.tpex.org.tw/" target="_blank" rel="noopener">證券櫃檯買賣中心（上櫃、興櫃、創新板）</a></p><p><a href="https://www.sfb.gov.tw/" target="_blank" rel="noopener">金管會證券期貨局</a></p></div>
     </div>
   </div>
   <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3>AI 上市路徑診斷</h3><button type="button" class="ghost ai-btn" disabled data-ai="ipo">請 AI 診斷</button></div><p>依「投資決策委員會」頁填寫的公司資料，評估最適路徑、主要缺口與改善順序。</p><div class="out md" id="ai-ipo"></div></div>
+</section>
+
+<!-- ============ COACH ============ -->
+<section class="view" id="v-coach">
+  <div class="eyebrow">模組 01+｜IPO 陪跑</div>
+  <h1>從公司現況一路陪跑到興櫃、上櫃／上市</h1>
+  <p class="lede">選擇上市路徑、產業與目標板塊，系統會列出每個階段要完成的檢核項目，以及要準備、上傳的文件。上傳的文件會一併提供給 AI 專家委員會分析。法規條件常有修訂，正式申請前請以證交所、櫃買中心與主管機關最新公告為準。</p>
+  <div class="card">
+    <div class="form">
+      <label for="cpPath">上市路徑<select id="cpPath"><option value="profit">營利上市（公司直接走資本市場）</option><option value="np">非營利上市（財團法人、大學、醫院、研究機構衍生公司）</option></select></label>
+      <label for="cpInd">產業<select id="cpInd"><option value="bio">生技新藥</option><option value="device">醫療器材</option><option value="ai">AI（含醫療 AI）</option><option value="health">大健康（保健、數位健康、精準健康）</option></select></label>
+      <label for="cpBoard">目標板塊<select id="cpBoard"><option value="esb">先登錄興櫃</option><option value="tpex">上櫃（一般）</option><option value="tpex_tech">上櫃（科技事業）</option><option value="tib">上市（臺灣創新板）</option><option value="twse">上市（一般板）</option></select></label>
+    </div>
+    <div class="grid g4" id="cpKpi" style="margin-top:14px"></div>
+  </div>
+  <div class="cp-timeline" id="cpTimeline"></div>
+  <div class="grid cp-main">
+    <div id="cpStages" class="grid" style="align-content:start"></div>
+    <div class="grid" style="align-content:start">
+      <div class="card stripe" id="cpReg"></div>
+      <div class="card"><div class="row" style="justify-content:space-between"><h3>下一步</h3><button type="button" class="ghost" id="cpCopy">複製待辦與文件清單</button></div><div id="cpNext" class="md" style="margin-top:6px"></div></div>
+      <div class="card"><div class="row" style="justify-content:space-between"><h3>AI 陪跑診斷</h3><button type="button" class="ghost" id="coachAI" disabled>請 AI 陪跑診斷</button></div><p>依目前勾選狀態、已上傳文件與案件資料，判斷所在階段、主要缺口，並排出未來 90 天行動計畫。</p><div class="out md" id="ai-coach"></div></div>
+    </div>
+  </div>
 </section>
 
 <!-- ============ BP ============ -->
@@ -605,15 +653,15 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const val=id=>parseFloat(document.getElementById(id).value)||0;
 
 /* ---------- routing ---------- */
-const views=['overview','data','committee','ipo','bp','valuation','biotech','ma','ip','industry','cases','checklist','score','roadmap'];
+const views=['overview','data','committee','ipo','coach','bp','valuation','biotech','ma','ip','industry','cases','checklist','score','roadmap'];
 function route(){const h=location.hash.slice(1);const v=views.includes(h)?h:'overview';$$('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));$$('nav.side a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));$('#side').classList.remove('open');window.scrollTo(0,0)}
 addEventListener('hashchange',route);route();
 $('#menuBtn').onclick=()=>$('#side').classList.toggle('open');
 
 /* ---------- AI ---------- */
 let ai=null,dl=null;
-function disableAI(msg){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
-function enableAI(){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
+function disableAI(msg){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt,#coachAI').forEach(b=>{b.disabled=true;b.title=msg});const n=$('#cStatus');n.style.display='';n.textContent=msg+' 計算器與清單功能仍可正常使用。'}
+function enableAI(){$$('.ai-btn,#runCommittee,#finAI,.ag-run,#mkPpt,#coachAI').forEach(b=>{b.disabled=false;b.title=''});const n=$('#cStatus');if(n.dataset.k!=='run'){n.style.display='none'}}
 let CACHE_OK=false;const USAGE={calls:0,in:0,cr:0,cw:0,out:0};
 function trackUsage(u){if(!u)return;USAGE.calls++;USAGE.in+=u.input_tokens||0;USAGE.cr+=u.cache_read_input_tokens||0;USAGE.cw+=u.cache_creation_input_tokens||0;USAGE.out+=u.output_tokens||0;const el=document.getElementById('usageLine');if(el){const tot=USAGE.in+USAGE.cr+USAGE.cw;el.style.display='';el.textContent=`本頁累計 AI 用量：${USAGE.calls} 次呼叫｜輸入 ${fmt(tot)} token，其中 ${fmt(USAGE.cr)}（${tot?Math.round(USAGE.cr/tot*100):0}%）由快取讀取、${fmt(USAGE.cw)} 寫入快取｜輸出 ${fmt(USAGE.out)} token`}}
 function serverAI(prompt,opts={}){return(async()=>{let code='';try{code=sessionStorage.getItem('aci_code')||''}catch(e){}code=($('#accessCode')&&$('#accessCode').value.trim())||code;const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json','x-access-code':code},body:JSON.stringify({prompt,system:opts.system||'',context:opts.context||'',cache:opts.cache!==false,tier:opts.modelTier||'default'}),signal:opts.signal});if(!r.ok){let j={};try{j=await r.json()}catch(e){}throw{code:j.code||'http_'+r.status,message:j.message||('HTTP '+r.status)}}try{sessionStorage.setItem('aci_code',code)}catch(e){}const rd=r.body.getReader(),dec=new TextDecoder();let raw='';const vis=()=>{const k=raw.indexOf('\u0000');return k<0?raw:raw.slice(0,k)};for(;;){const{done,value}=await rd.read();if(done)break;raw+=dec.decode(value,{stream:true});opts.onText&&opts.onText({text:vis()})}const k=raw.indexOf('\u0000');let usage=null;if(k>=0){try{usage=JSON.parse(raw.slice(k+1))}catch(e){}}trackUsage(usage);return{text:vis(),usage}})()}
@@ -895,7 +943,7 @@ function cur(){return deals.find(d=>d.id===curId)||deals[0]}
 function saveDeals(){try{sessionStorage.setItem('aci_deals',JSON.stringify(deals));sessionStorage.setItem('aci_cur',curId);return true}catch(e){$('#upStatus').textContent='分頁暫存空間不足：這次上傳的文件內容未能存入暫存，重新整理後需重新上傳。可刪除不需要的文件或案件釋出空間。';return false}}
 function finText(d){const y=d.fin.years;const has=FIN_ROWS.some(r=>d.fin.v[r[0]].some(x=>x!==null&&x!==''));if(!has)return '';return '項目\t'+y.join('\t')+'\n'+FIN_ROWS.map(r=>r[1]+'\t'+y.map((_,i)=>d.fin.v[r[0]][i]??'').join('\t')).join('\n')}
 const FIELDS=[['cName','name'],['cInd','ind'],['cStage','stage'],['cRole','role'],['cDesc','desc']];
-function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderAgentFiles();renderRouting();renderResults();renderCmSum()}
+function loadDeal(){const d=cur();FIELDS.forEach(([id,k])=>{const el=$('#'+id);if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===d[k])){el.add(new Option(d[k]))}el.value=d[k]});renderDealSel();renderFiles();renderFin();renderAgentFiles();renderRouting();renderResults();renderCmSum();if(typeof renderCoach==='function')try{renderCoach()}catch(e){}}
 function renderDealSel(){$('#dealSel').innerHTML=deals.map(d=>`<option value="${d.id}" ${d.id===curId?'selected':''}>${esc(d.name)}</option>`).join('')}
 function renderCmSum(){const d=cur();$('#cmSum').textContent=d.name;const chars=d.files.reduce((s,f)=>s+f.text.length,0);const an=Object.values(d.agentFiles||{}).reduce((s,x)=>s+x.length,0);$('#cmSub').textContent=`${d.ind}｜${d.stage}｜共用文件 ${d.files.length} 份（約 ${fmt(chars)} 字）｜Agent 專屬文件 ${an} 份｜財務數據 ${finText(d)?'已輸入':'未輸入'}`}
 FIELDS.forEach(([id,k])=>{const el=$('#'+id);const h=()=>{cur()[k]=el.value;saveDeals();if(k==='name')renderDealSel();renderCmSum()};el.addEventListener('input',h);el.addEventListener('change',h)});
@@ -950,6 +998,124 @@ $('#finAI').onclick=async e=>{if(!ai)return;const d=cur();if(!d.files.length&&!d
 loadDeal();renderCk();
 try{if(sessionStorage.getItem('aci_cleared')){sessionStorage.removeItem('aci_cleared');const n=document.createElement('div');n.className='note';n.setAttribute('role','status');n.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.2);background:var(--card);border:1px solid var(--line)';n.textContent='偵測到新的訪客，已清空這台電腦先前留下的平台資料。';document.body.appendChild(n);setTimeout(()=>n.remove(),6000)}}catch(e){}
 
+
+/* ---------- IPO coach (IPO 陪跑) ---------- */
+const CP_BOARDS={esb:'先登錄興櫃',tpex:'上櫃（一般）',tpex_tech:'上櫃（科技事業）',tib:'上市（臺灣創新板）',twse:'上市（一般板）'};
+const CP_IND={bio:'生技新藥',device:'醫療器材',ai:'AI',health:'大健康'};
+const I=(id,t,docs,who,cat,o={})=>Object.assign({id,t,docs,who,cat},o);
+const CP_STAGES=[
+ {id:'N0',np:true,t:'衍生主體規劃與機構核准',sub:'非營利機構先確認能否、如何衍生營利公司',items:[
+  I('n0a','確認機構類型、主管機關，以及投資或衍生新創的內部規定','機構章程、衍生新創實施辦法、主管機關函釋','機構法務','公司基本資料'),
+  I('n0b','機構審議通過衍生新創（新創審議會或董事會決議）','審議會紀錄、董事會決議','機構','公司基本資料'),
+  I('n0c','財團法人投資營利事業：符合財團法人法與主管機關監督，財產運用須安全可靠','董事會決議、主管機關核准或備查函','機構／律師','法律資料'),
+  I('n0d','確認研發成果權屬，政府補助成果須依科學技術基本法及成果歸屬運用辦法辦理','權屬證明、資助機關同意文件','機構技轉單位','專利資料')]},
+ {id:'N1',np:true,t:'技術移轉與技術作價',sub:'把技術合法、可估值地移入新公司',items:[
+  I('n1a','簽訂技術授權或移轉合約（範圍、地域、期限、再授權、權利金）','授權／移轉合約','機構技轉單位／律師','法律資料'),
+  I('n1b','技術鑑價與技術作價入股','技術鑑價報告、作價入股董事會決議','鑑價機構／會計師','專利資料'),
+  I('n1c','研究人員兼職或借調核准，主動揭露利益關係並落實迴避','兼職／借調核准、利益揭露表','研究人員／機構人事','人才資料'),
+  I('n1d','約定授權金、衍生利益金與學術回饋金分配','分配約定書','機構／公司','募資資料')]},
+ {id:'N2',np:true,t:'營利公司設立與獨立營運',sub:'讓衍生公司成為可投資、可上市的主體',items:[
+  I('n2a','公司設立登記、章程與股權結構（含機構持股比例）','公司登記表、章程、股權結構表','公司','公司基本資料'),
+  I('n2b','與母機構的關係人交易規範（場地、設備、人員、服務）須公允並書面化','關係人交易合約、計價依據','公司／會計師','法律資料'),
+  I('n2c','核心團隊轉任或聘任，避免人員與成果權屬爭議','聘僱合約、保密與發明讓與條款','公司','人才資料'),
+  I('n2d','完成首輪募資（天使、創投或策略投資人）','投資協議、股東協議','公司','募資資料')]},
+ {id:'S0',t:'現況診斷與上市規劃',sub:'確認體質、選定板塊與時程',items:[
+  I('s0a','公司基本資料與股權結構盤點','公司登記表、章程、股東名冊、股權結構圖','公司','公司基本資料'),
+  I('s0b','近二至三年經會計師查核簽證的財務報表','查核簽證財報、管理報表','會計師','財務資料'),
+  I('s0c','營運模式與營收品質分析','營收明細、主要客戶與合約、月營收','公司','營運資料'),
+  I('s0d','法律健檢：訴訟、重大合約、勞動、智慧財產權屬','法律健檢報告','律師','法律資料'),
+  I('s0e','選定目標板塊與上市時程，董事會通過上市櫃計畫','上市櫃規劃書、董事會決議','公司／承銷商','退出規劃')]},
+ {id:'S1',t:'公開發行準備',sub:'建立上市公司的治理與會計基礎',items:[
+  I('s1a','委任簽證會計師，依 IFRS 編製財務報告','會計師委任書、IFRS 財報','會計師','財務資料'),
+  I('s1b','規劃董事會、獨立董事與功能性委員會（審計委員會、薪資報酬委員會）','董事名單、獨董資格聲明、委員會組織規程','公司／律師','公司基本資料'),
+  I('s1c','內部控制制度設計並開始執行，建立內部稽核','內控制度、年度稽核計畫','公司／會計師','財務資料'),
+  I('s1d','修訂公司章程與股東會、董事會議事規則','修正後章程、議事規則','律師','法律資料'),
+  I('s1e','委任專業股務代理機構，股票全面無實體發行','股務代理契約','公司','公司基本資料'),
+  I('s1f','申報補辦公開發行，或於申請興櫃時併送申報（一般或簡易公開發行）','公開發行申報書件','公司／承銷商','公司基本資料')]},
+ {id:'S2',t:'登錄興櫃',sub:'無設立年限、獲利、股權分散限制，須二家以上推薦證券商',items:[
+  I('s2a','與證券商簽訂上市（櫃）輔導契約','輔導契約','承銷商','募資資料'),
+  I('s2b','取得二家以上輔導推薦證券商書面推薦，並指定主辦','推薦書、財務業務重大事件檢查表','承銷商','募資資料'),
+  I('s2c','依法設置獨立董事與薪資報酬委員會（併送公開發行者得承諾於期限內完成）','董事會與股東會議事錄','公司','公司基本資料'),
+  I('s2d','董事及監察人投保責任保險','董監責任險保單','公司','法律資料'),
+  I('s2e','負責人、董事、監察人及持股 10% 以上股東完成至少三小時證券法規或公司治理研習','研習證明','公司','人才資料'),
+  I('s2f','依應行記載事項準則編製公開說明書','公開說明書','公司／承銷商','募資資料')]},
+ {id:'S3',t:'興櫃交易與輔導期',sub:'上櫃須興櫃交易滿 6 個月；創新板須輔導滿 6 個月且登錄興櫃合計 6 個月以上',items:[
+  I('s3a','興櫃交易期間累計達規定（一般為 6 個月）','興櫃登錄公告、期間紀錄','承銷商','募資資料'),
+  I('s3b','依規定公告財務報告與每月營運情形','財報與月營收公告紀錄','公司','財務資料'),
+  I('s3c','內部控制制度實際執行並留存紀錄、追蹤改善','稽核報告、缺失改善追蹤','公司','財務資料'),
+  I('s3d','承銷商輔導評估與缺失改善','輔導報告、改善計畫','承銷商','募資資料'),
+  I('s3e','舉辦法人說明會，建立投資人溝通','法說會簡報','公司','募資資料')]},
+ {id:'S4',t:'申請上櫃／上市',sub:'依目標板塊檢核條件並送件審查',items:[
+  I('s4a','依目標板塊逐項檢核申請條件（資本額、設立年限、獲利或市值等）','條件檢核表','承銷商／會計師','財務資料'),
+  I('s4b','會計師內部控制制度專案審查報告','內控專審報告','會計師','財務資料'),
+  I('s4c','承銷商評估報告與推薦','承銷商評估報告','承銷商','募資資料'),
+  I('s4d','律師法律事項檢查表或法律意見書','法律意見書','律師','法律資料'),
+  I('s4e','申請書件與公開說明書（申請版）','申請書、公開說明書','公司／承銷商','募資資料'),
+  I('s4f','股權分散計畫（上櫃：內部人以外記名股東不少於 300 人，持股合計 20% 以上或逾一千萬股，掛牌前完成）','股東名冊、股權分散計畫','承銷商','公司基本資料',{boards:['tpex','tpex_tech']}),
+  I('s4t','取得中央目的事業主管機關出具「科技事業且產品或技術具市場性」評估意見書（生技公司多向經濟部產業發展署申請）','科技事業評估意見書','公司／主管機關','技術資料',{boards:['tpex_tech']}),
+  I('s4i','說明關鍵核心技術、創新能力或創新經營模式，並提出市值計算方式','創新性說明、市值計算','公司／承銷商','技術資料',{boards:['tib']}),
+  I('s4j','編製申請月份至掛牌後 12 個月的各月現金收支預測，證明營運資金足夠','現金收支預測表','公司／會計師','未來預測',{boards:['tib']}),
+  I('s4w','依證交所審查準則檢核上市一般板條件（設立年限、資本額、獲利或市值等多元標準）','上市條件檢核表','承銷商','財務資料',{boards:['twse']})]},
+ {id:'S5',t:'掛牌與上市後',sub:'承銷、集保與持續資訊揭露',items:[
+  I('s5a','公開承銷與承銷價格訂定','承銷計畫、詢圈資料','承銷商','募資資料'),
+  I('s5b','董事及持股逾 10% 股東依規定辦理股票集中保管','集保證明','公司','公司基本資料'),
+  I('s5c','建立重大訊息處理與資訊揭露機制','重大訊息處理程序','公司','法律資料'),
+  I('s5d','規劃法說會與投資人關係（IR）','IR 計畫','公司','募資資料')]}
+];
+const CP_EXTRA={
+ bio:{S0:[I('xb0','研發管線與臨床階段總表','管線表、臨床開發計畫','公司','臨床資料'),I('xb1','核心專利清單、專利家族與自由實施（FTO）分析','專利清單、FTO 報告','專利師','專利資料')],
+      S1:[I('xb2','（選用）申請經濟部「生技醫藥公司」審定，享研發與人才租稅優惠','審定函','公司','公司基本資料')],
+      S2:[I('xb3','臨床試驗許可（TFDA／FDA／EMA）與試驗結果','臨床試驗核准函、試驗報告','公司','臨床資料')],
+      S4:[I('xb4','依證交所「新藥或醫療器材研發公司申請上市公開說明書揭露重點參考」強化揭露','揭露對照表','公司／承銷商','臨床資料'),I('xb5','創新板生醫業：核心產品臨床進度須符合證交所條件（如新藥通過第一階段臨床試驗）','臨床進度證明','公司','臨床資料',{boards:['tib']})]},
+ device:{S0:[I('xd0','產品分級與上市許可路徑（TFDA 查驗登記、FDA 510(k)／PMA、CE）','法規策略書','法規顧問','臨床資料'),I('xd1','核心專利與 FTO 分析','專利清單、FTO 報告','專利師','專利資料')],
+      S1:[I('xd2','建立醫療器材品質管理系統（如 ISO 13485）','QMS 證書、品質手冊','公司','技術資料')],
+      S2:[I('xd3','醫療器材許可證或查驗登記進度、臨床或性能驗證','許可證、驗證報告','公司','臨床資料')],
+      S4:[I('xd4','依證交所新藥或醫療器材研發公司公開說明書揭露重點強化揭露','揭露對照表','公司／承銷商','臨床資料')]},
+ ai:{S0:[I('xa0','資料來源與授權盤點，確認個資法合規','資料授權合約、個資評估','律師','法律資料'),I('xa1','模型、演算法與程式碼的智慧財產與營業秘密管理','營業秘密管理辦法、IP 清單','公司／律師','專利資料')],
+      S1:[I('xa2','資訊安全管理制度（如 ISO 27001）','資安政策、驗證證書','公司','技術資料'),I('xa3','SaaS 或授權營收指標（ARR、續約率、客戶留存）','營收指標報表','公司','營運資料')],
+      S2:[I('xa4','醫療 AI：醫療器材軟體（SaMD）查驗登記，並遵循衛福部醫療機構應用生成式 AI 相關指引','查驗登記文件、合規對照表','法規顧問','臨床資料')]},
+ health:{S0:[I('xh0','產品法規分類（一般食品、健康食品、化粧品、醫療器材或數位健康服務）','法規分類表','法規顧問','技術資料'),I('xh1','功效佐證（健康食品認證、臨床或研究數據）','認證文件、研究報告','公司','臨床資料')],
+      S1:[I('xh2','廣告與標示合規審查（食安法、化粧品法、醫療法等）','合規審查紀錄','律師','法律資料'),I('xh3','通路、經銷與電商合約，確認營收品質與退貨機制','通路合約、營收明細','公司','營運資料')],
+      S2:[I('xh4','數位健康服務的個資保護與資訊安全','隱私政策、資安評估','公司','法律資料')]}
+};
+const CP_REG={
+ esb:['<b>登錄興櫃</b>','無設立年限、獲利能力、股權分散等條件限制。','須為公開發行公司，或於申請時併送申報公開發行（一般或簡易）。','須與證券商簽訂輔導契約，並經二家以上輔導推薦證券商書面推薦。','須委任專業股務代理、股票無實體發行，並設置獨立董事與薪資報酬委員會。'],
+ tpex:['<b>上櫃（一般）</b>','實收資本額新臺幣 5 千萬元以上；設立登記滿 2 個完整會計年度。','財務須符合獲利能力等標準之一（例如稅前淨利占股本比率最近一年度達 4% 以上，最近一年度稅前淨利不低於 400 萬元且無累積虧損）。','股權分散：內部人以外記名股東不少於 300 人，持股合計 20% 以上或逾一千萬股，掛牌前完成。','應設置審計委員會與薪資報酬委員會；申請前須申報上櫃輔導或於興櫃交易滿 6 個月。'],
+ tpex_tech:['<b>上櫃（科技事業）</b>','取得中央目的事業主管機關出具「科技事業且產品或技術開發成功具市場性」評估意見者，不受設立年限及獲利能力限制。','實收資本額仍須新臺幣 5 千萬元以上。','適合營運績效尚未顯現的生技、醫材、AI 新創；生技公司多向經濟部產業發展署申請科技事業意見書。','其餘程序與一般上櫃相同：興櫃交易、股權分散、功能性委員會。'],
+ tib:['<b>上市（臺灣創新板）</b>','鎖定擁有關鍵核心技術、創新能力或創新經營模式的公司（例如 AI、大數據、新藥研發）。','以市值為核心，不以獲利為要件；生醫業另有核心產品臨床進度等條件。','須與主辦承銷商輔導滿 6 個月，且登錄興櫃合計 6 個月以上；設立滿 2 年。','2025 年起取消合格投資人限制；上市一般板、創新板、上櫃公司掛牌滿一年且符合條件者可互相轉板。'],
+ twse:['<b>上市（一般板）</b>','設立年限、資本額、獲利或市值等條件高於上櫃，採多元標準。','須經輔導並於興櫃交易達規定期間。','適合已具規模與穩定獲利的公司；生技、醫材公司須依證交所揭露重點強化公開說明書。','詳細門檻請依證交所「有價證券上市審查準則」最新版本。']
+};
+const CP_LINKS='<p style="margin-top:8px;font-size:13px"><a href="https://www.tpex.org.tw/zh-tw/mainboard/ipo/ways-to-list/domestic.html" target="_blank" rel="noopener">櫃買中心上（興）櫃標準</a>｜<a href="https://www.tpex.org.tw/zh-tw/mainboard/ipo/ways-to-list/tech.html" target="_blank" rel="noopener">科技事業上櫃專區</a>｜<a href="https://www.twse.com.tw/" target="_blank" rel="noopener">證交所（上市、創新板）</a>｜<a href="https://law.moj.gov.tw/LawClass/LawAll.aspx?PCode=I0020030" target="_blank" rel="noopener">財團法人法</a></p>';
+const CP_ST=[['todo','未開始'],['doing','進行中'],['done','已完成'],['na','不適用']];
+function cpState(){const d=cur();d.ipo=d.ipo||{path:'profit',ind:'bio',board:'tpex_tech',st:{},open:null};d.ipo.st=d.ipo.st||{};return d.ipo}
+function cpStages(){const o=cpState();return CP_STAGES.filter(s=>!s.np||o.path==='np').map(s=>{const extra=((CP_EXTRA[o.ind]||{})[s.id])||[];const items=s.items.concat(extra).filter(it=>!it.boards||it.boards.includes(o.board));return Object.assign({},s,{items})}).filter(s=>!(o.board==='esb'&&['S3','S4','S5'].includes(s.id)))}
+function cpFiles(id){return cur().files.filter(f=>f.ipo===id)}
+function cpProg(st){const o=cpState();const its=st.items.filter(i=>o.st[i.id]!=='na');const done=its.filter(i=>o.st[i.id]==='done').length;return{done,total:its.length,p:its.length?done/its.length:1}}
+function renderCoach(){if(!document.getElementById('cpStages'))return;const o=cpState();$('#cpPath').value=o.path;$('#cpInd').value=o.ind;$('#cpBoard').value=o.board;
+  const stages=cpStages();const all=stages.flatMap(s=>s.items);const act=all.filter(i=>o.st[i.id]!=='na');const done=act.filter(i=>o.st[i.id]==='done').length;
+  const nowIdx=Math.max(0,stages.findIndex(s=>cpProg(s).p<1));const now=stages.findIndex(s=>cpProg(s).p<1)<0?stages.length-1:nowIdx;
+  const needDocs=act.filter(i=>o.st[i.id]!=='done'&&!cpFiles(i.id).length).length;const nfiles=cur().files.filter(f=>f.ipo).length;
+  $('#cpKpi').innerHTML=[['整體完成度',pct(act.length?done/act.length:0,0)],['目前階段',stages[now]?stages[now].t:'—'],['已完成項目',`${done} / ${act.length}`],['已上傳文件',`${nfiles} 份｜待補 ${needDocs} 項`]].map(k=>`<div class="kpi"><span class="v" style="font-size:${k[0]==='目前階段'?17:24}px">${esc(k[1])}</span><span class="l">${k[0]}</span></div>`).join('');
+  $('#cpTimeline').innerHTML=stages.map((s,i)=>{const pg=cpProg(s);return`<button type="button" class="cp-node ${i===now?'now':''} ${pg.p>=1?'done':''}" data-go="${s.id}"><small>${s.np?'非營利・':''}階段 ${i+1}</small><b>${esc(s.t)}</b><small>${pg.done}/${pg.total} 完成</small><div class="bar"><i style="width:${pg.p*100}%"></i></div></button>`}).join('');
+  const openId=o.open||(stages[now]&&stages[now].id);
+  $('#cpStages').innerHTML=stages.map((s,i)=>{const pg=cpProg(s);return`<details class="card cp-stage ${s.np?'stripe warn':''}" id="cps-${s.id}" ${s.id===openId?'open':''}><summary><div><div class="cp-sub">${s.np?'非營利路徑・':''}階段 ${i+1}</div><h3>${esc(s.t)}</h3><div class="cp-sub">${esc(s.sub)}</div></div><span class="pill ${pg.p>=1?'good':pg.done?'warn':''}">${pg.done}/${pg.total}</span></summary>`+
+   s.items.map(it=>{const v=o.st[it.id]||'todo';const fs=cpFiles(it.id);return`<div class="cp-item st-${v}"><div><select data-st="${it.id}" aria-label="${esc(it.t)} 狀態">${CP_ST.map(([k,l])=>`<option value="${k}" ${k===v?'selected':''}>${l}</option>`).join('')}</select></div><div><div class="cp-t">${esc(it.t)}</div><div class="cp-tags"><span class="pill">${esc(it.who)}</span>${it.boards?`<span class="pill warn">${it.boards.map(b=>CP_BOARDS[b]).join('、')}</span>`:''}</div><div class="cp-docs">${it.docs.split('、').map(x=>`<span class="cp-doc">${esc(x)}</span>`).join('')}<label class="cp-up" for="cpu-${it.id}">＋ 上傳<input type="file" id="cpu-${it.id}" data-up="${it.id}" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json"></label>${fs.map(f=>`<span class="cp-file">${esc(f.name)}<button type="button" class="ghost" data-rm="${esc(f.name)}" data-it="${it.id}" aria-label="移除 ${esc(f.name)}">×</button></span>`).join('')}</div></div></div>`}).join('')+`</details>`}).join('');
+  $('#cpReg').innerHTML=`<h3>${CP_BOARDS[o.board]}：法規重點</h3><div class="md"><ul>${CP_REG[o.board].slice(1).map(x=>`<li>${x}</li>`).join('')}</ul></div>`+(o.path==='np'?'<p class="note" style="margin-top:8px">非營利機構本身不能直接上市，須先依財團法人法、科學技術基本法與研究人員兼職及技術作價相關規定，衍生出可投資的營利公司，再走上述路徑。</p>':'')+CP_LINKS+'<p style="font-size:12px;color:var(--muted)">以上為重點摘要，正式條件以主管機關與交易所最新公告為準。</p>';
+  const next=act.filter(i=>o.st[i.id]!=='done').slice(0,6);
+  $('#cpNext').innerHTML=next.length?'<ul>'+next.map(i=>`<li><b>${esc(i.t)}</b><br><span style="color:var(--muted);font-size:13px">準備：${esc(i.docs)}｜${esc(i.who)}</span></li>`).join('')+'</ul>':'<p>所有項目都已完成。</p>';
+  $$('#cpTimeline [data-go]').forEach(b=>b.onclick=()=>{o.open=b.dataset.go;saveDeals();renderCoach();const el=$('#cps-'+b.dataset.go);el&&el.scrollIntoView({behavior:'smooth',block:'start'})});
+  $$('#cpStages details').forEach(dt=>dt.addEventListener('toggle',()=>{if(dt.open){o.open=dt.id.slice(4);saveDeals()}}));
+  $$('#cpStages [data-st]').forEach(e=>e.onchange=()=>{o.st[e.dataset.st]=e.value;saveDeals();renderCoach()});
+  $$('#cpStages [data-up]').forEach(e=>e.onchange=async()=>{const id=e.dataset.up;const it=all.find(x=>x.id===id);const tmp=[];const st=$('#cpNext');const {ok,fail}=await ingest(e.files,tmp,{set textContent(v){}});tmp.forEach(f=>{f.ipo=id;f.cat=it.cat;cur().files.push(f)});if(ok&&(o.st[id]||'todo')==='todo')o.st[id]='doing';saveDeals();renderFiles();renderCk();renderCmSum();renderRouting();renderResults();renderCoach();if(fail.length){const n=document.createElement('p');n.className='note';n.textContent='未成功：'+fail.join('；');$('#cps-'+(o.open||'')) ?$('#cps-'+o.open).appendChild(n):null}e.value=''});
+  $$('#cpStages [data-rm]').forEach(b=>b.onclick=()=>{const d=cur();const k=d.files.findIndex(f=>f.ipo===b.dataset.it&&f.name===b.dataset.rm);if(k>=0)d.files.splice(k,1);saveDeals();renderFiles();renderCk();renderCmSum();renderRouting();renderResults();renderCoach()});
+}
+['cpPath','cpInd','cpBoard'].forEach(id=>$('#'+id).onchange=e=>{const o=cpState();o[{cpPath:'path',cpInd:'ind',cpBoard:'board'}[id]]=e.target.value;o.open=null;saveDeals();renderCoach()});
+function cpText(){const o=cpState();return cpStages().map((s,i)=>`【階段 ${i+1}：${s.t}】\n`+s.items.map(it=>{const v=o.st[it.id]||'todo';const fs=cpFiles(it.id).map(f=>f.name);return`- [${CP_ST.find(x=>x[0]===v)[1]}] ${it.t}｜應備：${it.docs}｜負責：${it.who}${fs.length?'｜已上傳：'+fs.join('、'):''}`}).join('\n')).join('\n\n')}
+$('#cpCopy').onclick=e=>{const o=cpState();const head=`IPO 陪跑待辦（${cur().name}｜${o.path==='np'?'非營利上市':'營利上市'}｜${CP_IND[o.ind]}｜${CP_BOARDS[o.board]}）\n\n`;const rows=cpStages().flatMap(s=>s.items.filter(i=>!['done','na'].includes(o.st[i.id])).map(i=>`□ [${s.t}] ${i.t}\n   應備文件：${i.docs}（${i.who}）`));copy(head+(rows.join('\n')||'全部完成'),e.target)};
+$('#coachAI').onclick=async e=>{if(!ai)return;const b=e.target;b.disabled=true;const o=cpState();
+  const prompt=`你是台灣資本市場 IPO 陪跑顧問（熟悉證交所、櫃買中心規章與生技、醫材、AI、大健康產業）。\n上市路徑：${o.path==='np'?'非營利上市（財團法人、大學、醫院或研究機構衍生營利公司）':'營利上市'}\n產業：${CP_IND[o.ind]}\n目標板塊：${CP_BOARDS[o.board]}\n\n目前檢核狀態：\n${cpText()}\n\n請輸出：\n### 目前所在階段與整體準備度（一句話結論）\n### 各階段主要缺口（依影響程度排序，指出缺少哪些文件）\n### 未來 90 天行動計畫（以 2 週為單位，含負責單位）\n### 需要委任的專業機構與建議時點（會計師、律師、承銷商、專利師、法規顧問、鑑價機構）\n### ${CP_IND[o.ind]}產業與此路徑的特別風險\n### 預估時程（以季為單位：興櫃、${CP_BOARDS[o.board]}）\n引用已上傳文件的內容時註明檔名；法規門檻須註明「以最新公告為準」。`;
+  try{await ask(prompt,$('#ai-coach'),{system:BASE,context:`案件資料：\n${caseText()}`,cache:true})}catch(err){}b.disabled=false};
+renderCoach();
 /* ---------- quick upload on committee ---------- */
 (()=>{const inp=$('#cmFile'),dz=$('#cmDrop');const go=async list=>{if(!list||!list.length)return;const st=$('#cStatus');st.style.display='';st.dataset.k='run';const {ok,fail}=await ingest(list,cur().files,st);renderFiles();renderCk();renderCmSum();st.textContent=`已加入 ${ok} 份共用文件。`+(fail.length?'未成功：'+fail.join('；'):'');if(ok&&ai&&!$('#runCommittee').disabled)$('#runCommittee').click();else if(ok&&!ai)st.textContent+=' AI 目前無法使用，文件已保存。'};
   inp.onchange=e=>{go(e.target.files);e.target.value=''};['dragenter','dragover'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over')}));dz.addEventListener('drop',e=>go(e.dataTransfer.files))})();
